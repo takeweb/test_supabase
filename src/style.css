@@ -1,0 +1,74 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 20px;
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+}
+
+#app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#books-list {
+    list-style: none;
+    padding: 0;
+}
+
+#books-list li {
+    background-color: #e8f5e9;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 5px solid #4caf50;
+    display: block; /* 縦に積む */
+    white-space: pre-wrap; /* 改行を反映させる */
+}
+
+#error-message {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #ffebee;
+    border: 1px solid #ef9a9a;
+    border-radius: 5px;
+    color: #c62828;
+}
+
+/* パスワード入力とボタンを囲むコンテナのスタイル */
+.password-input-container {
+    position: relative;
+    width: 100%; /* 親要素の幅いっぱいに広げる */
+    display: flex; /* inputとbuttonを横並びにするため */
+    align-items: center; /* 垂直方向中央揃え */
+}
+
+/* パスワード入力フィールドのスタイル */
+#password {
+    flex-grow: 1; /* 残りのスペースを埋める */
+    padding-right: 40px; /* ボタンのスペースを確保するために右側に余白 */
+    box-sizing: border-box; /* paddingとborderをwidthに含める */
+}
+
+/* パスワード表示/非表示ボタンのスタイル */
+#toggle-password-btn {
+    position: absolute; /* 親要素 .password-input-container に対して絶対配置 */
+    right: 10px; /* 右端からの距離 */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.9em;
+    color: #555;
+    /* transform: translateY(-50%); */ /* flexboxと組み合わせる場合不要 */
+}
