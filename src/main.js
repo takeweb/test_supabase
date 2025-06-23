@@ -27,7 +27,7 @@ function renderInitialUI() {
 
   appDiv.innerHTML = `
     <div id="auth-container">
-      <h1>Supabase 認証サンプル</h1>
+      <h1>Supabase 書籍リスト</h1>
       <div id="auth-status-area" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
         <div id="user-info"></div>
         <button type="button" id="sign-out-btn" style="padding: 8px 12px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; display: none; margin-left: 10px;">ログアウト</button>
@@ -95,16 +95,9 @@ function renderInitialUI() {
 async function getJoinedBooksData(session) {
   console.log(`session.user.id: ${session.user.id}`);
   try {
-    // const { data: books, error } = await supabase.rpc(
-    //   "get_books_with_aggregated_authors",
-    //   { p_user_id: session.user.id }
-    // );
     const { data: books, error } = await supabase.rpc(
       "get_books_with_aggregated_authors"
     );
-
-    console.log("RPCから返されたデータ (books):", books);
-    console.log("RPCから返されたエラー (error):", error);
 
     if (error) {
       console.log(`error: ${error}`);
@@ -116,40 +109,70 @@ async function getJoinedBooksData(session) {
       return;
     }
 
-    contentAreaDivElement.innerHTML = `
-            <h2>書籍リスト</h2>
-            <p>Supabaseから取得した書籍と著者情報です。</p>
-            <ul id="books-list"></ul>
-            `;
+    contentAreaDivElement.innerHTML = `<ul id="books-list"></ul>`;
 
     const booksList = document.getElementById("books-list");
 
     if (books && books.length > 0) {
       books.forEach((book) => {
-        const bookName = book.title;
-        const authorNames = book.author_names || "著者不明";
+        const title = book.title;
+        const subtitle = book.sub_title;
+        const edition = book.edition;
+        const bookName = `${title}${edition ? `  ${edition}` : ""}${
+          subtitle ? `  ―${subtitle}` : ""
+        }`;
+        const bookPages = book.pages;
+        const authorNames = book.author_names || "不明";
         const supervisorNames = book.supervisor_names || "";
         const translatorNames = book.translator_names || "";
-        const publisherName = book.publisher_name || "出版社不明";
+        const translationSupervisionNames =
+          book.translation_supervision_names || "";
+        const publisherName = book.publisher_name || "不明";
         const price = Number(book.price).toLocaleString("ja-JP");
         const isbn = formatIsbn(book.isbn);
+        const bookFormat = book.format_name || "不明";
+        const releaseDate = book.release_date || "不明";
+        const purchaseDate = book.purchase_date || "不明";
+        const bookCoverImageName = book.book_cover_image_name || "";
 
         const listItem = document.createElement("li");
 
         const bookDetails = [];
         bookDetails.push(`<strong>書籍名:</strong> ${bookName}`);
-        bookDetails.push(`<strong>著者:</strong> ${authorNames}`);
 
+        if (bookCoverImageName) {
+          // bookcoversバケット内の指定された画像の公開URLを取得
+          const { data: coverImageData } = supabase.storage
+            .from("bookcovers") // バケット名
+            .getPublicUrl(bookCoverImageName); // ファイルパス
+
+          const coverImageUrl = coverImageData ? coverImageData.publicUrl : "";
+          console.log(`coverImageUrl: ${coverImageUrl}`);
+          bookDetails.push(
+            `<img src="${coverImageUrl}" alt="本の表紙" style="max-width: 150px; height: auto; margin-bottom: 10px;">`
+          );
+        }
+
+        bookDetails.push(`<strong>著者:</strong> ${authorNames}`);
         if (supervisorNames) {
           bookDetails.push(`<strong>監修者:</strong> ${supervisorNames}`);
         }
         if (translatorNames) {
           bookDetails.push(`<strong>翻訳者:</strong> ${translatorNames}`);
         }
+        if (translationSupervisionNames) {
+          bookDetails.push(
+            `<strong>監訳者:</strong> ${translationSupervisionNames}`
+          );
+        }
 
         bookDetails.push(`<strong>出版社:</strong> ${publisherName}`);
         bookDetails.push(`<strong>価格:</strong> ¥${price}`);
         bookDetails.push(`<strong>ISBN:</strong> ${isbn}`);
+        bookDetails.push(`<strong>形式:</strong> ${bookFormat}`);
+        bookDetails.push(`<strong>本の長さ:</strong> ${bookPages}ページ`);
+        bookDetails.push(`<strong>発売日:</strong> ${releaseDate}`);
+        bookDetails.push(`<strong>購入日:</strong> ${purchaseDate}`);
 
         listItem.innerHTML = bookDetails.join("<br>");
         booksList.appendChild(listItem);
