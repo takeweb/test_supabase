@@ -3,19 +3,57 @@
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
  * この関数はログイン成功時と、認証状態が変更された時に auth.js から呼び出されます
+ *
  * @param {object} supabase - Supabaseクライアントインスタンス
  * @param {HTMLElement} contentAreaDivElement - 書籍リストを表示するDOM要素
+ * @param {number} currentPage - 現在のページ番号 (1から始まる)
+ * @param {number} itemsPerPage - 1ページあたりの表示項目数
+ * @param {function(number): void} totalCountCallback - 総書籍数をmain.jsに伝えるためのコールバック関数
  */
-export async function getJoinedBooksData(supabase, contentAreaDivElement) {
+export async function getJoinedBooksData(
+  supabase,
+  contentAreaDivElement,
+  currentPage,
+  itemsPerPage,
+  totalCountCallback
+) {
   try {
-    const { data: books, error } = await supabase.rpc(
+    // ページネーションのためのデータ範囲を計算
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage - 1;
+
+    // まず書籍の総数を取得する
+    // RLSポリシーに注意し、適切に設定されていることを確認してください
+    const { count: totalCount, error: countError } = await supabase
+      .from("books")
+      .select("*", { count: "exact", head: true }); // head:trueでデータは取得せずカウントのみ
+
+    if (countError) {
+      console.error(
+        "書籍総数の取得中にエラーが発生しました:",
+        countError.message
+      );
+      throw countError;
+    }
+
+    // 総数をコールバックでmain.jsに伝える
+    if (totalCountCallback) {
+      totalCountCallback(totalCount);
+    }
+
+    // RPC関数が全件を返した場合、JavaScriptでページングを適用するための呼び出し
+    // 理想的にはRPC関数自体にOFFSETとLIMITの引数を渡すように変更することを推奨します
+    const { data: allBooks, error: rpcError } = await supabase.rpc(
       "get_books_with_aggregated_authors"
     );
 
-    if (error) {
-      console.log(`error: ${error}`);
-      throw error;
+    if (rpcError) {
+      console.error(`RPC呼び出し中にエラーが発生しました: ${rpcError.message}`);
+      throw rpcError;
     }
+
+    // JavaScriptでページングを適用
+    const books = allBooks.slice(startIndex, endIndex + 1);
 
     // contentAreaDivElement が正しく渡されていることを確認
     if (!contentAreaDivElement) {
@@ -25,12 +63,15 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
       return;
     }
 
-    // 既存の内容をクリアし、新しいリストコンテナを設定
-    // スタイルはCSSファイルに移行済み
-    contentAreaDivElement.innerHTML = `
-      <div id="books-list"></div>
-    `;
+    // #books-list 要素への参照を直接取得 (main.jsで既に作成されている前提)
     const booksList = document.getElementById("books-list");
+    if (!booksList) {
+      console.error("#books-list element not found in #content-area.");
+      return;
+    }
+
+    // 既存の内容をクリア（innerHTMLを直接空にする方法）
+    booksList.innerHTML = "";
 
     if (books && books.length > 0) {
       books.forEach((book) => {
@@ -50,7 +91,7 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
         const publisherName = book.publisher_name || "不明";
         const price = Number(book.price).toLocaleString("ja-JP");
         const isbn = formatIsbn(book.isbn);
-        const bookFormat = book.format_name || "不明";
+        const bookFormat = book.book_format || "不明"; // 'format_name' から 'book_format' に修正
         const releaseDate = book.release_date || "不明";
         const purchaseDate = book.purchase_date || "不明";
         const bookCoverImageName = book.book_cover_image_name || "";
@@ -75,6 +116,7 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
             "https://via.placeholder.com/150x225?text=No+Image"; // 画像がない場合の代替
         }
         bookCoverImg.alt = "本の表紙";
+
         bookCoverDiv.appendChild(bookCoverImg);
 
         // --- 右側：本の情報コンテナ ---
@@ -137,6 +179,7 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
         if (book.description) {
           const descriptionP = document.createElement("p");
           descriptionP.textContent = book.description;
+          descriptionP.classList.add("description"); // CSSでスタイルを適用するためにクラスを追加
           bookInfoDiv.appendChild(descriptionP);
         }
 
@@ -155,7 +198,7 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
       contentAreaDivElement.innerHTML = `
                 <h2>エラー</h2>
                 <p>書籍データの読み込みに失敗しました。Supabaseの設定、RLSポリシー、およびテーブル関係を確認してください。</p>
-                <p id="error-message" style="color: red;">エラー詳細: ${error.message}</p>
+                <p id="error-message">エラー詳細: ${error.message}</p>
             `;
     }
   }
