@@ -1,8 +1,8 @@
 // src/main.js
 
-import { initializeAuthUI } from "./auth";
+import { initializeAuthUI } from "./libs/auth";
+import { getJoinedBooksData } from "./libs/bookUtil";
 import "./style.css";
-import { supabase } from "./supabaseClient";
 
 // --- DOM要素への参照 ---
 const appDiv = document.querySelector("#app");
@@ -85,138 +85,6 @@ function renderInitialUI() {
     },
     getJoinedBooksData
   );
-}
-
-/**
- * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
- * この関数はログイン成功時と、認証状態が変更された時に auth.js から呼び出されます
- * @param {object} session - ログイン中のユーザーセッションオブジェクト
- */
-async function getJoinedBooksData(session) {
-  console.log(`session.user.id: ${session.user.id}`);
-  try {
-    const { data: books, error } = await supabase.rpc(
-      "get_books_with_aggregated_authors"
-    );
-
-    if (error) {
-      console.log(`error: ${error}`);
-      throw error;
-    }
-
-    if (!contentAreaDivElement) {
-      console.error("#content-area element not found.");
-      return;
-    }
-
-    contentAreaDivElement.innerHTML = `<ul id="books-list"></ul>`;
-
-    const booksList = document.getElementById("books-list");
-
-    if (books && books.length > 0) {
-      books.forEach((book) => {
-        const title = book.title;
-        const subtitle = book.sub_title;
-        const edition = book.edition;
-        const bookName = `${title}${edition ? `  ${edition}` : ""}${
-          subtitle ? `  ―${subtitle}` : ""
-        }`;
-        const bookPages = book.pages;
-        const authorNames = book.author_names || "不明";
-        const supervisorNames = book.supervisor_names || "";
-        const translatorNames = book.translator_names || "";
-        const translationSupervisionNames =
-          book.translation_supervision_names || "";
-        const publisherName = book.publisher_name || "不明";
-        const price = Number(book.price).toLocaleString("ja-JP");
-        const isbn = formatIsbn(book.isbn);
-        const bookFormat = book.format_name || "不明";
-        const releaseDate = book.release_date || "不明";
-        const purchaseDate = book.purchase_date || "不明";
-        const bookCoverImageName = book.book_cover_image_name || "";
-
-        const listItem = document.createElement("li");
-
-        const bookDetails = [];
-        bookDetails.push(`<strong>書籍名:</strong> ${bookName}`);
-
-        if (bookCoverImageName) {
-          // bookcoversバケット内の指定された画像の公開URLを取得
-          const { data: coverImageData } = supabase.storage
-            .from("bookcovers") // バケット名
-            .getPublicUrl(bookCoverImageName); // ファイルパス
-
-          const coverImageUrl = coverImageData ? coverImageData.publicUrl : "";
-          console.log(`coverImageUrl: ${coverImageUrl}`);
-          bookDetails.push(
-            `<img src="${coverImageUrl}" alt="本の表紙" style="max-width: 150px; height: auto; margin-bottom: 10px;">`
-          );
-        }
-
-        bookDetails.push(`<strong>著者:</strong> ${authorNames}`);
-        if (supervisorNames) {
-          bookDetails.push(`<strong>監修者:</strong> ${supervisorNames}`);
-        }
-        if (translatorNames) {
-          bookDetails.push(`<strong>翻訳者:</strong> ${translatorNames}`);
-        }
-        if (translationSupervisionNames) {
-          bookDetails.push(
-            `<strong>監訳者:</strong> ${translationSupervisionNames}`
-          );
-        }
-
-        bookDetails.push(`<strong>出版社:</strong> ${publisherName}`);
-        bookDetails.push(`<strong>価格:</strong> ¥${price}`);
-        bookDetails.push(`<strong>ISBN:</strong> ${isbn}`);
-        bookDetails.push(`<strong>形式:</strong> ${bookFormat}`);
-        bookDetails.push(`<strong>本の長さ:</strong> ${bookPages}ページ`);
-        bookDetails.push(`<strong>発売日:</strong> ${releaseDate}`);
-        bookDetails.push(`<strong>購入日:</strong> ${purchaseDate}`);
-
-        listItem.innerHTML = bookDetails.join("<br>");
-        booksList.appendChild(listItem);
-      });
-    } else {
-      booksList.innerHTML = "<li>該当する書籍が見つかりませんでした。</li>";
-    }
-  } catch (error) {
-    console.error("書籍データの取得中にエラーが発生しました:", error.message);
-    if (contentAreaDivElement) {
-      contentAreaDivElement.innerHTML = `
-                <h2>エラー</h2>
-                <p>書籍データの読み込みに失敗しました。Supabaseの設定、RLSポリシー、およびテーブル関係を確認してください。</p>
-                <p id="error-message" style="color: red;">エラー詳細: ${error.message}</p>
-            `;
-    }
-  }
-}
-
-function formatIsbn(isbn) {
-  if (isbn && isbn.startsWith("978-") && isbn.length === 14) {
-    const numbersPart = isbn.substring(4);
-    if (numbersPart.length === 10) {
-      isbn = `978-${numbersPart.substring(0, 1)}-${numbersPart.substring(
-        1,
-        4
-      )}-${numbersPart.substring(4, 9)}-${numbersPart.substring(9, 10)}`;
-    } else {
-      isbn = "N/A (不正なISBN形式)";
-    }
-  } else if (isbn && isbn.startsWith("979-") && isbn.length === 14) {
-    const numbersPart = isbn.substring(4);
-    if (numbersPart.length === 10) {
-      isbn = `979-${numbersPart.substring(0, 1)}-${numbersPart.substring(
-        1,
-        4
-      )}-${numbersPart.substring(4, 9)}-${numbersPart.substring(9, 10)}`;
-    } else {
-      isbn = "N/A (不正なISBN形式)";
-    }
-  } else {
-    isbn = "N/A";
-  }
-  return isbn;
 }
 
 // アプリケーションの初期化

@@ -1,3 +1,5 @@
+// libs/auth.js (修正後)
+
 import { supabase } from "./supabaseClient"; // supabaseClientをインポート
 
 // 認証関連のDOM要素への参照 (main.jsから渡されるか、ここで取得)
@@ -32,13 +34,15 @@ export function initializeAuthUI(elements, onLoginSuccessCallback) {
   signUpButton = elements.signUpButtonElement;
   signOutButton = elements.signOutButtonElement;
   userInfoDiv = elements.userInfoDivElement;
-  contentAreaDiv = elements.contentAreaDivElement; // 追加
+  contentAreaDiv = elements.contentAreaDivElement; // main.jsから渡された参照を保持
 
   // --- イベントリスナーの追加 ---
   if (authForm) {
-    authForm.addEventListener("submit", (e) =>
-      handleSignIn(e, onLoginSuccessCallback)
-    );
+    // submitイベントリスナーを変更し、preventDefaultを内部で実行
+    authForm.addEventListener("submit", (e) => {
+      e.preventDefault(); // デフォルトのフォーム送信を防止
+      handleSignIn(onLoginSuccessCallback); // イベントオブジェクトを渡さない
+    });
   }
   if (signUpButton) {
     signUpButton.addEventListener("click", handleSignUp);
@@ -54,12 +58,9 @@ export function initializeAuthUI(elements, onLoginSuccessCallback) {
 
 /**
  * ログイン処理
- * @param {Event} event
  * @param {Function} onLoginSuccessCallback - ログイン成功時に呼び出すコールバック関数
  */
-async function handleSignIn(event, onLoginSuccessCallback) {
-  event.preventDefault();
-
+async function handleSignIn(onLoginSuccessCallback) {
   const email = emailInput.value;
   const password = passwordInput.value;
 
@@ -78,7 +79,8 @@ async function handleSignIn(event, onLoginSuccessCallback) {
     if (data && data.user) {
       alert("ログイン成功！");
       console.log("ログインユーザー:", data.user);
-      onLoginSuccessCallback(data.session); // ログイン成功時にコールバックを呼び出す
+      // ログイン成功時にコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
+      onLoginSuccessCallback(supabase, contentAreaDiv);
     }
   } catch (error) {
     console.error("予期せぬログインエラー:", error);
@@ -167,7 +169,8 @@ async function checkInitialSession(onLoginSuccessCallback) {
   updateAuthUI(session);
   if (session) {
     console.log("初期ロード時にセッションが存在します:", session.user.email);
-    onLoginSuccessCallback(session); // セッションがあればデータを取得
+    // ログイン成功時のコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
+    onLoginSuccessCallback(supabase, contentAreaDiv);
   } else {
     console.log("初期ロード時にセッションは存在しません。");
   }
@@ -184,7 +187,8 @@ function setupAuthStateChangeListener(onLoginSuccessCallback) {
     if (session) {
       // ログイン時 (またはセッション更新時)
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        onLoginSuccessCallback(session);
+        // ログイン成功時のコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
+        onLoginSuccessCallback(supabase, contentAreaDiv);
       }
     } else {
       // ログアウト時

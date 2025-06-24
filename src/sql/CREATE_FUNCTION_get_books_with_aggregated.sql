@@ -11,6 +11,7 @@ RETURNS TABLE (
   supervisor_names text,
   translator_names text,
   translation_supervision_names text,
+  editor_names text,
   publisher_name character varying,
   price bigint,
   isbn character varying,
@@ -74,6 +75,19 @@ BEGIN
             bp.role_id = 5 -- 監訳者
         GROUP BY
             bp.book_id
+    ),
+    EditorsAggregated AS (
+        SELECT
+            bp.book_id,
+            STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+        FROM
+            book_persons bp
+        INNER JOIN
+            persons p ON p.id = bp.person_id
+        WHERE
+            bp.role_id = 6 -- 編集者
+        GROUP BY
+            bp.book_id
     )
     SELECT
         b.id,
@@ -82,10 +96,11 @@ BEGIN
         b.sub_title,
         b.pages,
         b.book_cover_image_name,
-        COALESCE(aa.names, '') AS author_names, -- 結合結果がない場合は空文字列
+        COALESCE(aa.names, '') AS author_names,
         COALESCE(sa.names, '') AS supervisor_names,
         COALESCE(ta.names, '') AS translator_names,
         COALESCE(tsa.names, '') AS translation_supervision_names,
+        COALESCE(e.names, '') AS editor_names,
         p.publisher_name,
         b.price,
         b.isbn,
@@ -109,6 +124,8 @@ BEGIN
         ON ta.book_id = b.id
     LEFT JOIN TranslationSupervisionsAggregated tsa
         ON tsa.book_id = b.id
+    LEFT JOIN EditorsAggregated e
+        ON e.book_id = b.id
     ORDER BY
         b.id;
 END;
