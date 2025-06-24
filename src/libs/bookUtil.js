@@ -1,6 +1,4 @@
-// libs/bookUtil.js (修正後)
-
-// import { supabase } from "./supabaseClient"; // supabaseClientは引数で受け取るので不要
+// libs/bookUtil.js
 
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
@@ -27,8 +25,11 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
       return;
     }
 
-    contentAreaDivElement.innerHTML = `<ul id="books-list"></ul>`;
-
+    // 既存の内容をクリアし、新しいリストコンテナを設定
+    // スタイルはCSSファイルに移行済み
+    contentAreaDivElement.innerHTML = `
+      <div id="books-list"></div>
+    `;
     const booksList = document.getElementById("books-list");
 
     if (books && books.length > 0) {
@@ -54,55 +55,134 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
         const purchaseDate = book.purchase_date || "不明";
         const bookCoverImageName = book.book_cover_image_name || "";
 
-        const listItem = document.createElement("li");
+        const bookItemDiv = document.createElement("div");
+        bookItemDiv.classList.add("book-item");
+        // すべてのスタイルをCSSファイルに移行済み
+        // bookItemDiv.style.display = "flex";
+        // bookItemDiv.style.alignItems = "flex-start";
+        // bookItemDiv.style.border = "1px solid #eee";
+        // bookItemDiv.style.padding = "15px";
+        // bookItemDiv.style.borderRadius = "8px";
+        // bookItemDiv.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+        // bookItemDiv.style.backgroundColor = "#fff";
 
-        const bookDetails = [];
-        bookDetails.push(`<strong>書籍名:</strong> ${bookName}`);
+        // --- 左側：表紙画像コンテナ ---
+        const bookCoverDiv = document.createElement("div");
+        bookCoverDiv.classList.add("book-cover");
+        // スタイルはCSSファイルに移行済み
+        // bookCoverDiv.style.flexBasis = "25%";
+        // bookCoverDiv.style.flexShrink = "0";
+        // bookCoverDiv.style.marginRight = "20px";
 
+        const bookCoverImg = document.createElement("img");
         if (bookCoverImageName) {
-          // bookcoversバケット内の指定された画像の公開URLを取得
           const { data: coverImageData } = supabase.storage
             .from("bookcovers") // バケット名
             .getPublicUrl(bookCoverImageName); // ファイルパス
+          bookCoverImg.src = coverImageData
+            ? coverImageData.publicUrl
+            : "https://via.placeholder.com/150x225?text=No+Image";
+        } else {
+          bookCoverImg.src =
+            "https://via.placeholder.com/150x225?text=No+Image"; // 画像がない場合の代替
+        }
+        bookCoverImg.alt = "本の表紙";
+        // スタイルはCSSファイルに移行済み
+        // bookCoverImg.style.width = "100%";
+        // bookCoverImg.style.height = "auto";
+        // bookCoverImg.style.objectFit = "contain";
+        // bookCoverImg.style.borderRadius = "4px";
 
-          const coverImageUrl = coverImageData ? coverImageData.publicUrl : "";
-          // console.log(`coverImageUrl: ${coverImageUrl}`);
-          bookDetails.push(
-            `<img src="${coverImageUrl}" alt="本の表紙" style="max-width: 150px; height: auto; margin-bottom: 10px;">`
-          );
+        bookCoverDiv.appendChild(bookCoverImg);
+
+        // --- 右側：本の情報コンテナ ---
+        const bookInfoDiv = document.createElement("div");
+        bookInfoDiv.classList.add("book-info");
+        // スタイルはCSSファイルに移行済み
+        // bookInfoDiv.style.flexBasis = "75%";
+        // bookInfoDiv.style.flexGrow = "1";
+        // bookInfoDiv.style.flexShrink = "1";
+
+        const titleElement = document.createElement("h3");
+        titleElement.textContent = bookName;
+        // スタイルはCSSファイルに移行済み
+        // titleElement.style.marginBottom = "5px";
+        // titleElement.style.color = "#333";
+        // titleElement.style.marginTop = "0";
+
+        bookInfoDiv.appendChild(titleElement);
+
+        const createParagraph = (labelText, value) => {
+          // 値が存在し、かつ "不明" や "N/A" ではない場合にのみp要素を生成
+          if (value && value !== "不明" && value !== "N/A") {
+            const p = document.createElement("p");
+            p.innerHTML = `<strong>${labelText}:</strong> ${value}`;
+            // スタイルはCSSファイルに移行済み
+            // p.style.fontSize = "0.9em";
+            // p.style.color = "#666";
+            // p.style.marginBottom = "0px";
+            return p;
+          }
+          return null; // 要素を生成しない場合はnullを返す
+        };
+
+        // createParagraph が null を返す可能性があるので、null チェックを追加
+        let pElement = createParagraph("著者", authorNames);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("監修者", supervisorNames);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("翻訳者", translatorNames);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("監訳者", translationSupervisionNames);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("編集者", editorNames);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("出版社", publisherName);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("定価", `¥${price}`);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("ISBN", isbn);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("判型", bookFormat);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("頁数", `${bookPages}ページ`);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("発売日", releaseDate);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        pElement = createParagraph("購入日", purchaseDate);
+        if (pElement) bookInfoDiv.appendChild(pElement);
+
+        // descriptionがある場合は追加
+        if (book.description) {
+          const descriptionP = document.createElement("p");
+          descriptionP.textContent = book.description;
+          // descriptionPのスタイルもCSSファイルに移行済み
+          // descriptionP.style.fontSize = "0.85em";
+          // descriptionP.style.color = "#555";
+          // descriptionP.style.lineHeight = "1.5";
+          // descriptionP.style.marginTop = "5px"; // style.cssでは10pxなので注意
+          bookInfoDiv.appendChild(descriptionP);
         }
 
-        if (authorNames) {
-          bookDetails.push(`<strong>著者:</strong> ${authorNames}`);
-        }
-        if (supervisorNames) {
-          bookDetails.push(`<strong>監修者:</strong> ${supervisorNames}`);
-        }
-        if (translatorNames) {
-          bookDetails.push(`<strong>翻訳者:</strong> ${translatorNames}`);
-        }
-        if (translationSupervisionNames) {
-          bookDetails.push(
-            `<strong>監訳者:</strong> ${translationSupervisionNames}`
-          );
-        }
-        if (editorNames) {
-          bookDetails.push(`<strong>編集者:</strong> ${editorNames}`);
-        }
+        bookItemDiv.appendChild(bookCoverDiv);
+        bookItemDiv.appendChild(bookInfoDiv);
 
-        bookDetails.push(`<strong>出版社:</strong> ${publisherName}`);
-        bookDetails.push(`<strong>定価:</strong> ¥${price}`);
-        bookDetails.push(`<strong>ISBN:</strong> ${isbn}`);
-        bookDetails.push(`<strong>判型:</strong> ${bookFormat}`);
-        bookDetails.push(`<strong>頁数:</strong> ${bookPages}ページ`);
-        bookDetails.push(`<strong>発売日:</strong> ${releaseDate}`);
-        bookDetails.push(`<strong>購入日:</strong> ${purchaseDate}`);
-
-        listItem.innerHTML = bookDetails.join("<br>");
-        booksList.appendChild(listItem);
+        booksList.appendChild(bookItemDiv);
       });
     } else {
-      booksList.innerHTML = "<li>該当する書籍が見つかりませんでした。</li>";
+      booksList.innerHTML =
+        "<p style='text-align: center; color: #888;'>該当する書籍が見つかりませんでした。</p>";
     }
   } catch (error) {
     console.error("書籍データの取得中にエラーが発生しました:", error.message);

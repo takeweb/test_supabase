@@ -2,7 +2,7 @@
 
 import { initializeAuthUI } from "./libs/auth";
 import { getJoinedBooksData } from "./libs/bookUtil";
-import "./style.css";
+import "./style.css"; // 既存のスタイルシート
 
 // --- DOM要素への参照 ---
 const appDiv = document.querySelector("#app");
@@ -43,7 +43,8 @@ function renderInitialUI() {
         <button type="button" id="sign-up-btn" style="padding: 10px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">サインアップ</button>
       </form>
 
-      <div id="content-area"></div>
+      <div id="content-area">
+        </div>
     </div>
   `;
 
@@ -72,6 +73,7 @@ function renderInitialUI() {
   }
 
   // auth.js の初期化関数を呼び出し、要素とコールバックを渡す
+  // ここで getJoinedBooksData に supabase インスタンスと contentAreaDivElement を渡す
   initializeAuthUI(
     {
       authFormElement,
@@ -83,7 +85,10 @@ function renderInitialUI() {
       userInfoDivElement,
       contentAreaDivElement,
     },
-    getJoinedBooksData
+    // ここで getJoinedBooksData を直接呼び出すように変更
+    async (supabaseInstance, contentArea) => {
+      await getJoinedBooksData(supabaseInstance, contentArea);
+    }
   );
 }
 
