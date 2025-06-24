@@ -57,22 +57,10 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
 
         const bookItemDiv = document.createElement("div");
         bookItemDiv.classList.add("book-item");
-        // すべてのスタイルをCSSファイルに移行済み
-        // bookItemDiv.style.display = "flex";
-        // bookItemDiv.style.alignItems = "flex-start";
-        // bookItemDiv.style.border = "1px solid #eee";
-        // bookItemDiv.style.padding = "15px";
-        // bookItemDiv.style.borderRadius = "8px";
-        // bookItemDiv.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-        // bookItemDiv.style.backgroundColor = "#fff";
 
         // --- 左側：表紙画像コンテナ ---
         const bookCoverDiv = document.createElement("div");
         bookCoverDiv.classList.add("book-cover");
-        // スタイルはCSSファイルに移行済み
-        // bookCoverDiv.style.flexBasis = "25%";
-        // bookCoverDiv.style.flexShrink = "0";
-        // bookCoverDiv.style.marginRight = "20px";
 
         const bookCoverImg = document.createElement("img");
         if (bookCoverImageName) {
@@ -87,28 +75,14 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
             "https://via.placeholder.com/150x225?text=No+Image"; // 画像がない場合の代替
         }
         bookCoverImg.alt = "本の表紙";
-        // スタイルはCSSファイルに移行済み
-        // bookCoverImg.style.width = "100%";
-        // bookCoverImg.style.height = "auto";
-        // bookCoverImg.style.objectFit = "contain";
-        // bookCoverImg.style.borderRadius = "4px";
-
         bookCoverDiv.appendChild(bookCoverImg);
 
         // --- 右側：本の情報コンテナ ---
         const bookInfoDiv = document.createElement("div");
         bookInfoDiv.classList.add("book-info");
-        // スタイルはCSSファイルに移行済み
-        // bookInfoDiv.style.flexBasis = "75%";
-        // bookInfoDiv.style.flexGrow = "1";
-        // bookInfoDiv.style.flexShrink = "1";
 
         const titleElement = document.createElement("h3");
         titleElement.textContent = bookName;
-        // スタイルはCSSファイルに移行済み
-        // titleElement.style.marginBottom = "5px";
-        // titleElement.style.color = "#333";
-        // titleElement.style.marginTop = "0";
 
         bookInfoDiv.appendChild(titleElement);
 
@@ -117,10 +91,6 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
           if (value && value !== "不明" && value !== "N/A") {
             const p = document.createElement("p");
             p.innerHTML = `<strong>${labelText}:</strong> ${value}`;
-            // スタイルはCSSファイルに移行済み
-            // p.style.fontSize = "0.9em";
-            // p.style.color = "#666";
-            // p.style.marginBottom = "0px";
             return p;
           }
           return null; // 要素を生成しない場合はnullを返す
@@ -167,11 +137,6 @@ export async function getJoinedBooksData(supabase, contentAreaDivElement) {
         if (book.description) {
           const descriptionP = document.createElement("p");
           descriptionP.textContent = book.description;
-          // descriptionPのスタイルもCSSファイルに移行済み
-          // descriptionP.style.fontSize = "0.85em";
-          // descriptionP.style.color = "#555";
-          // descriptionP.style.lineHeight = "1.5";
-          // descriptionP.style.marginTop = "5px"; // style.cssでは10pxなので注意
           bookInfoDiv.appendChild(descriptionP);
         }
 
