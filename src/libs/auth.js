@@ -1,4 +1,4 @@
-// libs/auth.js (修正後)
+// libs/auth.js
 
 import { supabase } from "./supabaseClient"; // supabaseClientをインポート
 
@@ -11,6 +11,9 @@ let signUpButton;
 let signOutButton;
 let userInfoDiv;
 let contentAreaDiv; // 書籍リスト表示領域も更新する必要があるため
+let paginationContainerDiv;
+// ★追加：booksListElement の参照も保持する
+let booksListElement;
 
 /**
  * 認証関連のDOM要素を設定する関数
@@ -24,6 +27,7 @@ let contentAreaDiv; // 書籍リスト表示領域も更新する必要がある
  * @param {HTMLButtonElement} elements.signOutButtonElement
  * @param {HTMLElement} elements.userInfoDivElement
  * @param {HTMLElement} elements.contentAreaDivElement
+ * @param {HTMLElement} elements.paginationContainerElement
  * @param {Function} onLoginSuccessCallback - ログイン成功時に呼び出すコールバック関数
  */
 export function initializeAuthUI(elements, onLoginSuccessCallback) {
@@ -35,6 +39,10 @@ export function initializeAuthUI(elements, onLoginSuccessCallback) {
   signOutButton = elements.signOutButtonElement;
   userInfoDiv = elements.userInfoDivElement;
   contentAreaDiv = elements.contentAreaDivElement; // main.jsから渡された参照を保持
+  paginationContainerDiv = elements.paginationContainerElement;
+
+  // ★追加：booksListElement の参照を取得
+  booksListElement = document.getElementById("books-list");
 
   // --- イベントリスナーの追加 ---
   if (authForm) {
@@ -79,8 +87,10 @@ async function handleSignIn(onLoginSuccessCallback) {
     if (data && data.user) {
       alert("ログイン成功！");
       console.log("ログインユーザー:", data.user);
-      // ログイン成功時にコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
-      onLoginSuccessCallback(supabase, contentAreaDiv);
+      // ログイン成功時にUIを更新
+      updateAuthUI(data.session); // セッションを渡す
+      // ログイン成功時にコールバックを呼び出す際、supabaseとuserを渡す
+      onLoginSuccessCallback(supabase, data.user);
     }
   } catch (error) {
     console.error("予期せぬログインエラー:", error);
@@ -136,9 +146,10 @@ async function handleSignOut() {
   alert("ログアウトしました。");
   console.log("ログアウト成功");
   updateAuthUI(null); // UIをログアウト状態に更新
-  if (contentAreaDiv) {
-    // 書籍リスト表示領域をクリア
-    contentAreaDiv.innerHTML = "";
+
+  // ★変更：contentAreaDiv.innerHTML をクリアする代わりに booksListElement.innerHTML をクリアする
+  if (booksListElement) {
+    booksListElement.innerHTML = ""; // 書籍リストの内容のみをクリア
   }
 }
 
@@ -151,10 +162,18 @@ function updateAuthUI(session) {
     userInfoDiv.textContent = `ログイン中: ${session.user.email}`;
     if (authForm) authForm.style.display = "none";
     if (signOutButton) signOutButton.style.display = "block";
+    // ログイン時はページネーションを表示
+    if (paginationContainerDiv) {
+      paginationContainerDiv.style.display = "flex"; // または 'block'
+    }
   } else {
     userInfoDiv.textContent = "ログインしていません";
     if (authForm) authForm.style.display = "flex";
     if (signOutButton) signOutButton.style.display = "none";
+    // ログアウト時はページネーションを非表示
+    if (paginationContainerDiv) {
+      paginationContainerDiv.style.display = "none";
+    }
   }
 }
 
@@ -166,13 +185,21 @@ async function checkInitialSession(onLoginSuccessCallback) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  updateAuthUI(session);
+  updateAuthUI(session); // 初期ロード時にUIを更新し、ページネーションの表示も制御
   if (session) {
     console.log("初期ロード時にセッションが存在します:", session.user.email);
-    // ログイン成功時のコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
-    onLoginSuccessCallback(supabase, contentAreaDiv);
+    // ログイン成功時のコールバックを呼び出す際、supabaseとuserを渡す
+    onLoginSuccessCallback(supabase, session.user);
   } else {
     console.log("初期ロード時にセッションは存在しません。");
+    // セッションがない場合も明示的にページネーションを非表示にする
+    if (paginationContainerDiv) {
+      paginationContainerDiv.style.display = "none";
+    }
+    // ★追加：ログアウト状態の場合、booksListElement の内容もクリアする
+    if (booksListElement) {
+      booksListElement.innerHTML = "";
+    }
   }
 }
 
@@ -183,17 +210,22 @@ async function checkInitialSession(onLoginSuccessCallback) {
 function setupAuthStateChangeListener(onLoginSuccessCallback) {
   supabase.auth.onAuthStateChange((event, session) => {
     console.log("認証状態変更イベント:", event, session);
-    updateAuthUI(session);
+    updateAuthUI(session); // 認証状態の変化時にUIを更新し、ページネーションの表示も制御
     if (session) {
       // ログイン時 (またはセッション更新時)
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // ログイン成功時のコールバックを呼び出す際、supabaseとcontentAreaDivを渡す
-        onLoginSuccessCallback(supabase, contentAreaDiv);
+        // ログイン成功時のコールバックを呼び出す際、supabaseとuserを渡す
+        onLoginSuccessCallback(supabase, session.user);
       }
     } else {
       // ログアウト時
-      if (contentAreaDiv) {
-        contentAreaDiv.innerHTML = ""; // 書籍リストをクリア
+      // ★変更：contentAreaDiv.innerHTML をクリアする代わりに booksListElement.innerHTML をクリアする
+      if (booksListElement) {
+        booksListElement.innerHTML = ""; // 書籍リストの内容のみをクリア
+      }
+      // authUIがすでにpaginationContainerDivを非表示にするため、ここでは不要だが念のため
+      if (paginationContainerDiv) {
+        paginationContainerDiv.style.display = "none";
       }
     }
   });
