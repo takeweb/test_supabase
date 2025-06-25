@@ -4,12 +4,15 @@ import { initializeAuthUI } from "./libs/auth";
 import { getJoinedBooksData } from "./libs/bookUtil";
 import "./style.css";
 
+// SVGアイコンのパスを定義
+const ICON_PATH = "./img/";
+
 // --- DOM要素への参照 ---
 const appDiv = document.querySelector("#app");
 let authFormElement;
 let emailInputElement;
 let passwordInputElement;
-let togglePasswordButtonElement; // パスワード表示切り替えボタンを追加
+let togglePasswordButtonElement;
 let signInButtonElement;
 let signUpButtonElement;
 let signOutButtonElement;
@@ -18,38 +21,54 @@ let contentAreaDivElement;
 
 // --- ページネーション関連のDOM要素 ---
 let paginationContainerElement;
-let firstPageButtonElement; // 最初のページへボタン
+let firstPageButtonElement;
 let prevPageButtonElement;
 let nextPageButtonElement;
-let lastPageButtonElement; // 最後のページへボタン
-let pageInfoElement;
+let lastPageButtonElement;
+let pageSelectElement; // セレクトボックス要素
+let pageTotalInfoElement; // ★修正：総ページ数と「ページ」を表示する要素
 
 // --- ページネーションの状態 ---
-let currentPage = 1; // 現在のページ
-const itemsPerPage = 5; // 1ページあたりの表示項目数
-let totalBooksCount = 0; // 全書籍数
+let currentPage = 1;
+const itemsPerPage = 5;
+let totalBooksCount = 0;
 
 /**
  * ページネーションUIを更新する関数
  */
 function updatePaginationUI() {
   const totalPages = Math.ceil(totalBooksCount / itemsPerPage);
-  pageInfoElement.textContent = `${currentPage} / ${totalPages} ページ`;
 
-  // 最初のページへボタンの有効/無効を切り替え
+  if (pageSelectElement) {
+    pageSelectElement.innerHTML = "";
+    for (let i = 1; i <= totalPages; i++) {
+      const option = document.createElement("option");
+      option.value = i;
+      // ★修正：オプションテキストを現在のページ番号のみにする★
+      option.textContent = `${i}`;
+      if (i === currentPage) {
+        option.selected = true;
+      }
+      pageSelectElement.appendChild(option);
+    }
+    pageSelectElement.disabled = totalPages <= 1;
+  }
+
+  // ★修正：総ページ数と「ページ」の文言を更新★
+  if (pageTotalInfoElement) {
+    pageTotalInfoElement.textContent = ` / ${totalPages} ページ`;
+  }
+
   if (firstPageButtonElement) {
     firstPageButtonElement.disabled = currentPage === 1;
   }
-  // 前へボタンの有効/無効を切り替え
   if (prevPageButtonElement) {
     prevPageButtonElement.disabled = currentPage === 1;
   }
-  // 次へボタンの有効/無効を切り替え
   if (nextPageButtonElement) {
     nextPageButtonElement.disabled =
       currentPage === totalPages || totalPages === 0;
   }
-  // 最後のページへボタンの有効/無効を切り替え
   if (lastPageButtonElement) {
     lastPageButtonElement.disabled =
       currentPage === totalPages || totalPages === 0;
@@ -60,10 +79,8 @@ function updatePaginationUI() {
  * 書籍データを再ロードするヘルパー関数
  */
 async function loadBooksForPage() {
-  // async キーワードを追加
   if (window.supabaseClient) {
     await getJoinedBooksData(
-      // await を追加してデータ取得を待つ
       window.supabaseClient,
       contentAreaDivElement,
       currentPage,
@@ -73,9 +90,7 @@ async function loadBooksForPage() {
         updatePaginationUI();
       }
     );
-    // ★ここから追加★ ページトップへスクロール
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // ★ここまで追加★
   } else {
     console.error("Supabase client is not available for pagination.");
   }
@@ -109,16 +124,17 @@ function renderInitialUI() {
       </form>
 
       <div id="content-area">
-        <!-- 書籍情報が表示されるコンテナを事前に作成 -->
         <div id="books-list"></div>
       </div>
 
-      <div id="pagination-container">
-        <button type="button" id="first-page-btn" class="pagination-btn">最初へ</button>
-        <button type="button" id="prev-page-btn" class="pagination-btn">前へ</button>
-        <span id="page-info">1 / 1 ページ</span>
-        <button type="button" id="next-page-btn" class="pagination-btn">次へ</button>
-        <button type="button" id="last-page-btn" class="pagination-btn">最後へ</button>
+      <div id="pagination-container" style="display: none;">
+        <button type="button" id="first-page-btn" class="pagination-btn"></button>
+        <button type="button" id="prev-page-btn" class="pagination-btn"></button>
+        <div class="page-select-wrapper">
+          <select id="page-select" class="pagination-select"></select>
+          <span id="page-total-info"></span> </div>
+        <button type="button" id="next-page-btn" class="pagination-btn"></button>
+        <button type="button" id="last-page-btn" class="pagination-btn"></button>
       </div>
     </div>
   `;
@@ -132,7 +148,7 @@ function renderInitialUI() {
   signUpButtonElement = document.getElementById("sign-up-btn");
   signOutButtonElement = document.getElementById("sign-out-btn");
   userInfoDivElement = document.getElementById("user-info");
-  contentAreaDivElement = document.getElementById("content-area"); // #content-areaを取得
+  contentAreaDivElement = document.getElementById("content-area");
 
   // ページネーション要素への参照を取得
   paginationContainerElement = document.getElementById("pagination-container");
@@ -140,17 +156,32 @@ function renderInitialUI() {
   prevPageButtonElement = document.getElementById("prev-page-btn");
   nextPageButtonElement = document.getElementById("next-page-btn");
   lastPageButtonElement = document.getElementById("last-page-btn");
-  pageInfoElement = document.getElementById("page-info");
+  pageSelectElement = document.getElementById("page-select");
+  pageTotalInfoElement = document.getElementById("page-total-info"); // ★修正：参照する要素名を変更★
+
+  // 各ボタンにSVGアイコンを挿入
+  if (firstPageButtonElement) {
+    firstPageButtonElement.innerHTML = `<img src="${ICON_PATH}chevron-bar-left.svg" alt="最初へ">`;
+  }
+  if (prevPageButtonElement) {
+    prevPageButtonElement.innerHTML = `<img src="${ICON_PATH}chevron-left.svg" alt="前へ">`;
+  }
+  if (nextPageButtonElement) {
+    nextPageButtonElement.innerHTML = `<img src="${ICON_PATH}chevron-right.svg" alt="次へ">`;
+  }
+  if (lastPageButtonElement) {
+    lastPageButtonElement.innerHTML = `<img src="${ICON_PATH}chevron-bar-right.svg" alt="最後へ">`;
+  }
 
   // パスワード表示切り替えボタンのイベントリスナー
   if (togglePasswordButtonElement) {
     togglePasswordButtonElement.addEventListener("click", () => {
       if (passwordInputElement.type === "password") {
         passwordInputElement.type = "text";
-        togglePasswordButtonElement.textContent = "🔒"; // ロックアイコンに変更
+        togglePasswordButtonElement.textContent = "🔒";
       } else {
         passwordInputElement.type = "password";
-        togglePasswordButtonElement.textContent = "👁️"; // 目玉アイコンに戻す
+        togglePasswordButtonElement.textContent = "👁️";
       }
     });
   }
@@ -194,6 +225,17 @@ function renderInitialUI() {
     });
   }
 
+  // セレクトボックスのイベントリスナー
+  if (pageSelectElement) {
+    pageSelectElement.addEventListener("change", (event) => {
+      const selectedPage = parseInt(event.target.value, 10);
+      if (selectedPage && selectedPage !== currentPage) {
+        currentPage = selectedPage;
+        loadBooksForPage();
+      }
+    });
+  }
+
   // auth.js の初期化関数を呼び出し、要素とコールバックを渡す
   initializeAuthUI(
     {
@@ -205,16 +247,30 @@ function renderInitialUI() {
       signOutButtonElement,
       userInfoDivElement,
       contentAreaDivElement,
-      paginationContainerElement, // ページネーションコンテナも渡す
+      paginationContainerElement,
     },
-    // ここで getJoinedBooksData を直接呼び出すように変更
-    async (supabaseInstance, contentArea) => {
-      // Supabaseクライアントインスタンスをグローバルに保持（一時的対応）
+    async (supabaseInstance, user) => {
       window.supabaseClient = supabaseInstance;
 
-      // ページネーション状態をリセットして最初のページをロード
-      currentPage = 1;
-      await loadBooksForPage(); // ヘルパー関数を呼び出す
+      if (user) {
+        currentPage = 1;
+        await loadBooksForPage();
+        paginationContainerElement.style.display = "flex";
+      } else {
+        const booksList = document.getElementById("books-list");
+        if (booksList) {
+          booksList.innerHTML = "";
+        }
+        paginationContainerElement.style.display = "none";
+        if (pageSelectElement) {
+          pageSelectElement.innerHTML = "";
+          pageSelectElement.disabled = true;
+        }
+        // ★修正：ログアウト時に総ページ情報もクリア★
+        if (pageTotalInfoElement) {
+          pageTotalInfoElement.textContent = "";
+        }
+      }
     }
   );
 }

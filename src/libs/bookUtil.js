@@ -23,7 +23,6 @@ export async function getJoinedBooksData(
     const limit = itemsPerPage; // これが RPC 関数の LIMIT になる
 
     // まず書籍の総数を取得する
-    // RLSポリシーに注意し、適切に設定されていることを確認してください
     const { count: totalCount, error: countError } = await supabase
       .from("books")
       .select("*", { count: "exact", head: true }); // head:trueでデータは取得せずカウントのみ
@@ -54,9 +53,6 @@ export async function getJoinedBooksData(
       console.error(`RPC呼び出し中にエラーが発生しました: ${rpcError.message}`);
       throw rpcError;
     }
-
-    // ★削除★ データベース側でページングされたデータが返されるため、JavaScriptでのスライス処理は不要
-    // const books = allBooks.slice(startIndex, endIndex + 1);
 
     // contentAreaDivElement が正しく渡されていることを確認
     if (!contentAreaDivElement) {
@@ -94,7 +90,7 @@ export async function getJoinedBooksData(
         const publisherName = book.publisher_name || "不明";
         const price = Number(book.price).toLocaleString("ja-JP");
         const isbn = formatIsbn(book.isbn);
-        const bookFormat = book.format_name || "不明"; // 'format_name' に戻しました
+        const bookFormat = book.format_name || "不明";
         const releaseDate = book.release_date || "不明";
         const purchaseDate = book.purchase_date || "不明";
         const bookCoverImageName = book.book_cover_image_name || "";
@@ -207,6 +203,11 @@ export async function getJoinedBooksData(
   }
 }
 
+/**
+ * 入力文字列をISBNフォーマットに変換
+ * @param {string} isbn 入力文字列
+ * @returns ISBNフォーマット変換済み文字列
+ */
 export function formatIsbn(isbn) {
   if (!isbn) {
     return "N/A"; // ISBNがnullishの場合は 'N/A' を返す
