@@ -19,8 +19,8 @@ export async function getJoinedBooksData(
 ) {
   try {
     // ページネーションのためのデータ範囲を計算
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage - 1;
+    const offset = (currentPage - 1) * itemsPerPage; // これが RPC 関数の OFFSET になる
+    const limit = itemsPerPage; // これが RPC 関数の LIMIT になる
 
     // まず書籍の総数を取得する
     // RLSポリシーに注意し、適切に設定されていることを確認してください
@@ -41,10 +41,13 @@ export async function getJoinedBooksData(
       totalCountCallback(totalCount);
     }
 
-    // RPC関数が全件を返した場合、JavaScriptでページングを適用するための呼び出し
-    // 理想的にはRPC関数自体にOFFSETとLIMITの引数を渡すように変更することを推奨します
-    const { data: allBooks, error: rpcError } = await supabase.rpc(
-      "get_books_with_aggregated_authors"
+    // RPC関数にOFFSETとLIMITの引数を渡すように変更
+    const { data: books, error: rpcError } = await supabase.rpc(
+      "get_books_with_aggregated_authors",
+      {
+        p_offset: offset, // 関数が 'p_offset' という名前の引数を受け取る想定
+        p_limit: limit, // 関数が 'p_limit' という名前の引数を受け取る想定
+      }
     );
 
     if (rpcError) {
@@ -52,8 +55,8 @@ export async function getJoinedBooksData(
       throw rpcError;
     }
 
-    // JavaScriptでページングを適用
-    const books = allBooks.slice(startIndex, endIndex + 1);
+    // ★削除★ データベース側でページングされたデータが返されるため、JavaScriptでのスライス処理は不要
+    // const books = allBooks.slice(startIndex, endIndex + 1);
 
     // contentAreaDivElement が正しく渡されていることを確認
     if (!contentAreaDivElement) {
@@ -91,7 +94,7 @@ export async function getJoinedBooksData(
         const publisherName = book.publisher_name || "不明";
         const price = Number(book.price).toLocaleString("ja-JP");
         const isbn = formatIsbn(book.isbn);
-        const bookFormat = book.book_format || "不明"; // 'format_name' から 'book_format' に修正
+        const bookFormat = book.format_name || "不明"; // 'format_name' に戻しました
         const releaseDate = book.release_date || "不明";
         const purchaseDate = book.purchase_date || "不明";
         const bookCoverImageName = book.book_cover_image_name || "";

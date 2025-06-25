@@ -1,5 +1,9 @@
-DROP FUNCTION get_books_with_aggregated_authors();
-CREATE OR REPLACE FUNCTION get_books_with_aggregated_authors()
+DROP FUNCTION IF EXISTS get_books_with_aggregated_authors(int, int); -- 既存関数を引数付きでDROP (もし存在すれば)
+
+CREATE OR REPLACE FUNCTION get_books_with_aggregated_authors(
+  p_offset INT,
+  p_limit INT
+)
 RETURNS TABLE (
   id bigint,
   title character varying,
@@ -20,13 +24,11 @@ RETURNS TABLE (
   purchase_date date
 )
 LANGUAGE plpgsql AS $$
-
 BEGIN
   RETURN QUERY
     WITH AuthorsAggregated AS (
         SELECT
             bp.book_id,
-            -- book_idとperson_nameで重複を排除し、person_idでソートして結合
             STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
         FROM
             book_persons bp
@@ -115,7 +117,6 @@ BEGIN
         ON ub.book_id = b.id
     INNER JOIN formats f
         ON f.id = b.format_id
-    -- 各CTEをLEFT JOINして、既に結合済みの名前リストを取得
     LEFT JOIN AuthorsAggregated aa
         ON aa.book_id = b.id
     LEFT JOIN SupervisorsAggregated sa
@@ -127,6 +128,8 @@ BEGIN
     LEFT JOIN EditorsAggregated e
         ON e.book_id = b.id
     ORDER BY
-        b.id;
+        b.id
+    OFFSET p_offset
+    LIMIT p_limit;
 END;
 $$;
