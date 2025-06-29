@@ -5,7 +5,8 @@ import { getJoinedBooksData } from "./libs/bookUtil";
 import "./style.css";
 
 // SVGアイコンのパスを定義
-const ICON_PATH = "./img/";
+//const ICON_PATH = "/book/img/";
+const ICON_PATH = `${import.meta.env.BASE_URL}img/`;
 
 // --- DOM要素への参照 ---
 const appDiv = document.querySelector("#app");
