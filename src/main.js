@@ -5,7 +5,6 @@ import { getJoinedBooksData } from "./libs/bookUtil";
 import "./style.css";
 
 // SVGアイコンのパスを定義
-//const ICON_PATH = "/book/img/";
 const ICON_PATH = `${import.meta.env.BASE_URL}img/`;
 
 // --- DOM要素への参照 ---
@@ -45,7 +44,7 @@ function updatePaginationUI() {
     for (let i = 1; i <= totalPages; i++) {
       const option = document.createElement("option");
       option.value = i;
-      // ★修正：オプションテキストを現在のページ番号のみにする★
+      // オプションテキストを現在のページ番号のみにする
       option.textContent = `${i}`;
       if (i === currentPage) {
         option.selected = true;
@@ -57,7 +56,12 @@ function updatePaginationUI() {
 
   // ★修正：総ページ数と「ページ」の文言を更新★
   if (pageTotalInfoElement) {
-    pageTotalInfoElement.textContent = ` / ${totalPages} ページ`;
+    // 1ページしかない場合は「1」と表示し、それ以外は「/ 総ページ数 ページ」と表示
+    if (totalPages <= 1) {
+      pageTotalInfoElement.textContent = ""; // ページ数が1の場合、「/ 1 ページ」の部分を非表示にする
+    } else {
+      pageTotalInfoElement.textContent = ` / ${totalPages} ページ`;
+    }
   }
 
   if (firstPageButtonElement) {

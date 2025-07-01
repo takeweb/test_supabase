@@ -22,10 +22,28 @@ export async function getJoinedBooksData(
     const offset = (currentPage - 1) * itemsPerPage; // これが RPC 関数の OFFSET になる
     const limit = itemsPerPage; // これが RPC 関数の LIMIT になる
 
-    // まず書籍の総数を取得する
-    const { count: totalCount, error: countError } = await supabase
-      .from("books")
-      .select("*", { count: "exact", head: true }); // head:trueでデータは取得せずカウントのみ
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(); // 現在のユーザー情報を取得
+
+    if (!user) {
+      console.error("ユーザーがログインしていません。");
+      contentAreaDivElement.innerHTML = "<p>ログインしてください。</p>";
+      setTotalCountCallback(0); // ログインしていない場合は総数を0に
+      return;
+    }
+
+    const userId = user.id;
+
+    // ログインユーザーに紐づく書籍の総数を取得
+    const { count: totalCount, error: countError } = await supabaseClient
+      .from("user_books") // user_books テーブルを起点にする
+      .select("book_id", {
+        // book_id を選択し、カウントに使う
+        count: "exact",
+        head: true,
+      })
+      .eq("user_id", userId); // user_id でフィルタリング
 
     if (countError) {
       console.error(
