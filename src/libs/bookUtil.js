@@ -3,19 +3,20 @@
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
  * この関数はログイン成功時と、認証状態が変更された時に auth.js から呼び出されます
- *
  * @param {object} supabase - Supabaseクライアントインスタンス
  * @param {HTMLElement} contentAreaDivElement - 書籍リストを表示するDOM要素
  * @param {number} currentPage - 現在のページ番号 (1から始まる)
  * @param {number} itemsPerPage - 1ページあたりの表示項目数
  * @param {function(number): void} totalCountCallback - 総書籍数をmain.jsに伝えるためのコールバック関数
+ * @param {string|undefined|null} tagNameOrId - タグ名またはタグID（省略可）
  */
 export async function getJoinedBooksData(
   supabase,
   contentAreaDivElement,
   currentPage,
   itemsPerPage,
-  totalCountCallback
+  totalCountCallback,
+  tagNameOrId = null
 ) {
   try {
     // ページネーションのためのデータ範囲を計算
@@ -59,12 +60,18 @@ export async function getJoinedBooksData(
     }
 
     // RPC関数にOFFSETとLIMITの引数を渡すように変更
+    // タグ検索用の引数を追加
+    const rpcParams = {
+      p_offset: offset,
+      p_limit: limit,
+    };
+    if (tagNameOrId && tagNameOrId !== "") {
+      rpcParams.p_tag = tagNameOrId;
+    }
+
     const { data: books, error: rpcError } = await supabase.rpc(
       "get_books_with_aggregated_authors",
-      {
-        p_offset: offset, // 関数が 'p_offset' という名前の引数を受け取る想定
-        p_limit: limit, // 関数が 'p_limit' という名前の引数を受け取る想定
-      }
+      rpcParams
     );
 
     if (rpcError) {

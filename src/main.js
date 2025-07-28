@@ -28,6 +28,11 @@ let lastPageButtonElement;
 let pageSelectElement; // セレクトボックス要素
 let pageTotalInfoElement; // ★修正：総ページ数と「ページ」を表示する要素
 
+// --- タグセレクト用 ---
+let tagSelectAreaElement; // タグセレクトの親要素
+let tagSelectElement;
+let selectedTag = null;
+
 // --- ページネーションの状態 ---
 let currentPage = 1;
 const itemsPerPage = 5;
@@ -90,10 +95,33 @@ async function loadBooksForPage() {
       contentAreaDivElement,
       currentPage,
       itemsPerPage,
-      (count) => {
-        totalBooksCount = count;
+      async (count) => {
+        // タグで絞り込み時は総件数もタグで再取得
+        if (selectedTag && selectedTag !== "") {
+          // ユーザーID取得
+          const { data: userData } = await window.supabaseClient.auth.getUser();
+          const userId = userData?.user?.id;
+          // タグで絞り込んだ総件数を取得
+          const { data, error, count } = await window.supabaseClient
+            .from("user_books")
+            .select("book_id", { count: "exact", head: true })
+            .in(
+              "book_id",
+              (
+                await window.supabaseClient
+                  .from("book_tags")
+                  .select("book_id")
+                  .eq("tag_id", selectedTag)
+              ).data?.map((row) => row.book_id) || []
+            )
+            .eq("user_id", userId);
+          totalBooksCount = count || 0;
+        } else {
+          totalBooksCount = count;
+        }
         updatePaginationUI();
-      }
+      },
+      selectedTag
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   } else {
@@ -101,6 +129,37 @@ async function loadBooksForPage() {
   }
 }
 
+/**
+ * タグ一覧をSupabaseから取得し、セレクトボックスに反映
+ */
+async function loadTagsToSelect() {
+  if (!window.supabaseClient || !tagSelectElement) return;
+  tagSelectElement.innerHTML = "";
+  // デフォルト「すべて」
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "すべて";
+  tagSelectElement.appendChild(allOption);
+
+  const { data, error } = await window.supabaseClient
+    .from("tags")
+    .select("id, tag_name")
+    .order("id");
+  if (error) {
+    console.error("タグ取得エラー:", error);
+    return;
+  }
+
+  // 既に初期化済み（optionが2つ以上）の場合は何もしない
+  if (tagSelectElement.options.length > 1) return;
+
+  data.forEach((tag) => {
+    const option = document.createElement("option");
+    option.value = tag.id; // Set option value to tag ID
+    option.textContent = tag.tag_name; // Set option text to tag name
+    tagSelectElement.appendChild(option);
+  });
+}
 /**
  * アプリケーションの初期UIをレンダリングする関数
  */
@@ -155,14 +214,29 @@ function renderInitialUI() {
   userInfoDivElement = document.getElementById("user-info");
   contentAreaDivElement = document.getElementById("content-area");
 
-  // ページネーション要素への参照を取得
+  // タグセレクト要素への参照
+  tagSelectElement = document.getElementById("tag-select");
+
+  // ページネーション要素への参照
   paginationContainerElement = document.getElementById("pagination-container");
+  tagSelectAreaElement = document.getElementById("tag-select-area");
   firstPageButtonElement = document.getElementById("first-page-btn");
   prevPageButtonElement = document.getElementById("prev-page-btn");
   nextPageButtonElement = document.getElementById("next-page-btn");
   lastPageButtonElement = document.getElementById("last-page-btn");
   pageSelectElement = document.getElementById("page-select");
   pageTotalInfoElement = document.getElementById("page-total-info"); // ★修正：参照する要素名を変更★
+  // タグセレクトのイベントリスナー
+  if (tagSelectElement) {
+    // 既存のイベントリスナーを一度クリア
+    tagSelectElement.onchange = null;
+    tagSelectElement.addEventListener("change", (e) => {
+      const val = tagSelectElement.value;
+      selectedTag = val || null;
+      currentPage = 1;
+      loadBooksForPage();
+    });
+  }
 
   // 各ボタンにSVGアイコンを挿入
   if (firstPageButtonElement) {
@@ -253,12 +327,44 @@ function renderInitialUI() {
       userInfoDivElement,
       contentAreaDivElement,
       paginationContainerElement,
+      tagSelectAreaElement,
     },
     async (supabaseInstance, user) => {
       window.supabaseClient = supabaseInstance;
 
       if (user) {
         currentPage = 1;
+        // タグセレクトをログイン時のみ動的に生成
+        let tagSelectArea = document.getElementById("tag-select-area");
+        if (!tagSelectArea) {
+          tagSelectArea = document.createElement("div");
+          tagSelectArea.id = "tag-select-area";
+          tagSelectArea.style.marginBottom = "1em";
+          tagSelectArea.innerHTML = `
+            <label for="tag-select">タグで絞り込み：</label>
+            <select id="tag-select"><option>読み込み中...</option></select>
+          `;
+          // auth-status-areaの直後に挿入
+          const authStatusArea = document.getElementById("auth-status-area");
+          if (authStatusArea && authStatusArea.parentNode) {
+            authStatusArea.parentNode.insertBefore(
+              tagSelectArea,
+              authStatusArea.nextSibling
+            );
+          }
+        }
+        tagSelectElement = document.getElementById("tag-select");
+        await loadTagsToSelect();
+        // タグセレクトのイベントリスナーを再設定
+        if (tagSelectElement) {
+          tagSelectElement.onchange = null;
+          tagSelectElement.addEventListener("change", (e) => {
+            const val = tagSelectElement.value;
+            selectedTag = val || null;
+            currentPage = 1;
+            loadBooksForPage();
+          });
+        }
         await loadBooksForPage();
         paginationContainerElement.style.display = "flex";
       } else {
