@@ -14,6 +14,7 @@ let contentAreaDiv; // 書籍リスト表示領域も更新する必要がある
 let paginationContainerDiv;
 // ★追加：booksListElement の参照も保持する
 let booksListElement;
+let tagSelectAreaDiv; // タグセレクトの親要素
 
 /**
  * 認証関連のDOM要素を設定する関数
@@ -28,6 +29,7 @@ let booksListElement;
  * @param {HTMLElement} elements.userInfoDivElement
  * @param {HTMLElement} elements.contentAreaDivElement
  * @param {HTMLElement} elements.paginationContainerElement
+ * @param {HTMLElement} elements.tagSelectAreaElement
  * @param {Function} onLoginSuccessCallback - ログイン成功時に呼び出すコールバック関数
  */
 export function initializeAuthUI(elements, onLoginSuccessCallback) {
@@ -40,6 +42,7 @@ export function initializeAuthUI(elements, onLoginSuccessCallback) {
   userInfoDiv = elements.userInfoDivElement;
   contentAreaDiv = elements.contentAreaDivElement; // main.jsから渡された参照を保持
   paginationContainerDiv = elements.paginationContainerElement;
+  tagSelectAreaDiv = elements.tagSelectAreaElement; // タグセレクトの親要素
 
   // ★追加：booksListElement の参照を取得
   booksListElement = document.getElementById("books-list");
@@ -166,14 +169,21 @@ function updateAuthUI(session) {
     if (paginationContainerDiv) {
       paginationContainerDiv.style.display = "flex"; // または 'block'
     }
+    // ログイン時はタグセレクトエリアを表示（もしあれば）
+    const tagSelectArea = document.getElementById("tag-select-area");
+    if (tagSelectArea) tagSelectArea.style.display = "block";
   } else {
     userInfoDiv.textContent = "ログインしていません";
     if (authForm) authForm.style.display = "flex";
     if (signOutButton) signOutButton.style.display = "none";
+
     // ログアウト時はページネーションを非表示
     if (paginationContainerDiv) {
       paginationContainerDiv.style.display = "none";
     }
+    // ログアウト時はタグセレクトエリアを非表示
+    const tagSelectArea = document.getElementById("tag-select-area");
+    if (tagSelectArea) tagSelectArea.style.display = "none";
   }
 }
 
