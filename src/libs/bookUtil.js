@@ -3,7 +3,7 @@
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
  * この関数はログイン成功時と、認証状態が変更された時に auth.js から呼び出されます
- * @param {object} supabase - Supabaseクライアントインスタンス
+ * @param {object} supabaseClient - Supabaseクライアントインスタンス
  * @param {HTMLElement} contentAreaDivElement - 書籍リストを表示するDOM要素
  * @param {number} currentPage - 現在のページ番号 (1から始まる)
  * @param {number} itemsPerPage - 1ページあたりの表示項目数
@@ -11,7 +11,7 @@
  * @param {string|undefined|null} tagNameOrId - タグ名またはタグID（省略可）
  */
 export async function getJoinedBooksData(
-  supabase,
+  supabaseClient,
   contentAreaDivElement,
   currentPage,
   itemsPerPage,
@@ -25,7 +25,7 @@ export async function getJoinedBooksData(
 
     const {
       data: { user },
-    } = await supabase.auth.getUser(); // 現在のユーザー情報を取得
+    } = await supabaseClient.auth.getUser(); // 現在のユーザー情報を取得
 
     if (!user) {
       console.error("ユーザーがログインしていません。");
@@ -69,7 +69,7 @@ export async function getJoinedBooksData(
       rpcParams.p_tag = tagNameOrId;
     }
 
-    const { data: books, error: rpcError } = await supabase.rpc(
+    const { data: books, error: rpcError } = await supabaseClient.rpc(
       "get_books_with_aggregated_authors",
       rpcParams
     );
@@ -129,7 +129,7 @@ export async function getJoinedBooksData(
 
         const bookCoverImg = document.createElement("img");
         if (bookCoverImageName) {
-          const { data: coverImageData } = supabase.storage
+          const { data: coverImageData } = supabaseClient.storage
             .from("bookcovers") // バケット名
             .getPublicUrl(bookCoverImageName); // ファイルパス
           bookCoverImg.src = coverImageData
@@ -226,6 +226,51 @@ export async function getJoinedBooksData(
             `;
     }
   }
+}
+
+/**
+ * 件数取得
+ * @param {object} supabaseClient - Supabaseクライアントインスタンス
+ * @param {number} selectedTagId - 選択されたタグのID
+ * @returns 件数
+ */
+export async function getTotalCount(supabaseClient, selectedTagId) {
+  // ユーザーID取得
+  const { data: userData } = await supabaseClient.auth.getUser();
+  const userId = userData?.user?.id;
+  // タグで絞り込んだ総件数を取得
+  const { data, error, count } = await supabaseClient
+    .from("user_books")
+    .select("book_id", { count: "exact", head: true })
+    .in(
+      "book_id",
+      (
+        await supabaseClient
+          .from("book_tags")
+          .select("book_id")
+          .eq("tag_id", selectedTagId)
+      ).data?.map((row) => row.book_id) || []
+    )
+    .eq("user_id", userId);
+  return count || 0;
+}
+
+/**
+ * タグのリストを取得する関数
+ * @param {object} supabaseClient - Supabaseクライアントインスタンス
+ * @returns tagのリスト
+ * @returns {Promise<Array>} タグのリスト
+ */
+export async function getTagSelectData(supabaseClient) {
+  const { data, error } = await supabaseClient
+    .from("tags")
+    .select("id, tag_name")
+    .order("id");
+  if (error) {
+    console.error("タグ取得エラー:", error);
+    return;
+  }
+  return data || [];
 }
 
 /**

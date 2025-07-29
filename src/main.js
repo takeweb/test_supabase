@@ -1,7 +1,11 @@
 // src/main.js
 
 import { initializeAuthUI } from "./libs/auth";
-import { getJoinedBooksData } from "./libs/bookUtil";
+import {
+  getJoinedBooksData,
+  getTagSelectData,
+  getTotalCount,
+} from "./libs/bookUtil";
 import "./style.css";
 
 // SVGアイコンのパスを定義
@@ -98,24 +102,10 @@ async function loadBooksForPage() {
       async (count) => {
         // タグで絞り込み時は総件数もタグで再取得
         if (selectedTag && selectedTag !== "") {
-          // ユーザーID取得
-          const { data: userData } = await window.supabaseClient.auth.getUser();
-          const userId = userData?.user?.id;
-          // タグで絞り込んだ総件数を取得
-          const { data, error, count } = await window.supabaseClient
-            .from("user_books")
-            .select("book_id", { count: "exact", head: true })
-            .in(
-              "book_id",
-              (
-                await window.supabaseClient
-                  .from("book_tags")
-                  .select("book_id")
-                  .eq("tag_id", selectedTag)
-              ).data?.map((row) => row.book_id) || []
-            )
-            .eq("user_id", userId);
-          totalBooksCount = count || 0;
+          totalBooksCount = await getTotalCount(
+            window.supabaseClient,
+            selectedTag
+          );
         } else {
           totalBooksCount = count;
         }
@@ -141,15 +131,7 @@ async function loadTagsToSelect() {
   allOption.textContent = "すべて";
   tagSelectElement.appendChild(allOption);
 
-  const { data, error } = await window.supabaseClient
-    .from("tags")
-    .select("id, tag_name")
-    .order("id");
-  if (error) {
-    console.error("タグ取得エラー:", error);
-    return;
-  }
-
+  const data = await getTagSelectData(window.supabaseClient);
   // 既に初期化済み（optionが2つ以上）の場合は何もしない
   if (tagSelectElement.options.length > 1) return;
 
