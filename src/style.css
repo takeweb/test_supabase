@@ -1,3 +1,76 @@
+/* アプリ全体 */
+.app-container {
+  max-width: 600px;
+  margin: 2em auto;
+  font-family: sans-serif;
+}
+
+/* 認証フォーム */
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.auth-form-row {
+  margin-bottom: 0.5em;
+}
+.auth-input {
+  width: 100%;
+  padding: 0.5em;
+}
+
+/* 各書籍アイテム */
+.book-item {
+    display: flex;
+    align-items: flex-start;
+    border: 1px solid #eee;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #fff;
+    gap: 20px;
+    width: 95%;
+    max-width: 100%;
+    min-width: 600px;
+    margin: 5px;
+}
+
+/* 表紙画像コンテナ */
+.book-cover {
+    flex-basis: 25%;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    max-width: 150px;
+}
+
+.book-cover img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 4px;
+    max-height: 225px;
+}
+
+/* 書籍情報コンテナ */
+.book-detail {
+    flex: 1;
+}
+.book-title {
+    font-weight: bold;
+    font-size: 1.1em;
+    gap: 20px;
+}
+
+/* ページネーション */
+.pagination {
+  margin-top: 1em;
+  text-align: center;
+}
 body {
     font-family: 'Inter', sans-serif; /* Google Fonts Interを使用 */
     margin: 0; /* bodyのマージンをリセット */
@@ -46,15 +119,6 @@ h1 {
     cursor: pointer;
     margin-left: 10px;
     display: none; /* 初期状態では非表示 */
-}
-
-/* 認証フォーム */
-#auth-form {
-    display: flex;
-    flex-direction: column;
-    max-width: 300px;
-    gap: 10px;
-    margin-bottom: 20px;
 }
 
 /* 入力フィールド全般 */
@@ -122,35 +186,8 @@ input[type="password"] {
     gap: 20px;
 }
 
-/* 各書籍アイテム */
-.book-item {
-    display: flex;
-    align-items: flex-start;
-    border: 1px solid #eee;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    background-color: #fff;
-    gap: 20px;
-}
 
-/* 表紙画像コンテナ */
-.book-cover {
-    flex-basis: 25%;
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    max-width: 150px;
-}
 
-.book-cover img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    border-radius: 4px;
-    max-height: 225px;
-}
 
 /* 書籍情報コンテナ */
 .book-info {

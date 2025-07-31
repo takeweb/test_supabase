@@ -1,258 +1,113 @@
+/**
+ * 表紙画像URLをSupabase Storageから取得
+ * @param {object} supabaseClient - Supabaseクライアント
+ * @param {string|null|undefined} bookCoverImageName - 画像ファイル名
+ * @returns {string} 表紙画像のURL
+ */
+export function getBookCoverUrl(supabaseClient, bookCoverImageName) {
+  const noImageUrl = "https://placehold.jp/150x225.png?text=No+Image";
+  if (!bookCoverImageName) {
+    return noImageUrl;
+  }
+  const { data: coverImageData } = supabaseClient.storage
+    .from("bookcovers")
+    .getPublicUrl(bookCoverImageName);
+  if (coverImageData && coverImageData.publicUrl) {
+    return coverImageData.publicUrl;
+  }
+  return noImageUrl;
+}
 // libs/bookUtil.js
 
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
  * この関数はログイン成功時と、認証状態が変更された時に auth.js から呼び出されます
  * @param {object} supabaseClient - Supabaseクライアントインスタンス
- * @param {HTMLElement} contentAreaDivElement - 書籍リストを表示するDOM要素
  * @param {number} currentPage - 現在のページ番号 (1から始まる)
  * @param {number} itemsPerPage - 1ページあたりの表示項目数
  * @param {function(number): void} totalCountCallback - 総書籍数をmain.jsに伝えるためのコールバック関数
- * @param {string|undefined|null} tagNameOrId - タグ名またはタグID（省略可）
+ * @param {string|undefined|null} tagId - 選択されたタグID（省略可）
  */
 export async function getJoinedBooksData(
   supabaseClient,
-  contentAreaDivElement,
   currentPage,
   itemsPerPage,
   totalCountCallback,
-  tagNameOrId = null
+  tagId = null
 ) {
   try {
     // ページネーションのためのデータ範囲を計算
-    const offset = (currentPage - 1) * itemsPerPage; // これが RPC 関数の OFFSET になる
-    const limit = itemsPerPage; // これが RPC 関数の LIMIT になる
+    const offset = (currentPage - 1) * itemsPerPage;
+    const limit = itemsPerPage;
 
     const {
       data: { user },
-    } = await supabaseClient.auth.getUser(); // 現在のユーザー情報を取得
-
+    } = await supabaseClient.auth.getUser();
     if (!user) {
-      console.error("ユーザーがログインしていません。");
-      contentAreaDivElement.innerHTML = "<p>ログインしてください。</p>";
-      setTotalCountCallback(0); // ログインしていない場合は総数を0に
-      return;
+      if (totalCountCallback) totalCountCallback(0);
+      return [];
     }
-
     const userId = user.id;
 
-    // ログインユーザーに紐づく書籍の総数を取得
-    const { count: totalCount, error: countError } = await supabaseClient
-      .from("user_books") // user_books テーブルを起点にする
-      .select("book_id", {
-        // book_id を選択し、カウントに使う
-        count: "exact",
-        head: true,
-      })
-      .eq("user_id", userId); // user_id でフィルタリング
-
-    if (countError) {
-      console.error(
-        "書籍総数の取得中にエラーが発生しました:",
-        countError.message
-      );
+    // 総件数取得はgetTotalCount関数を利用（userIdを渡す）
+    let totalCount = 0;
+    try {
+      totalCount = await getTotalCount(supabaseClient, userId, tagId);
+      if (totalCountCallback) totalCountCallback(totalCount);
+    } catch (countError) {
+      if (totalCountCallback) totalCountCallback(0);
       throw countError;
     }
 
-    // 総数をコールバックでmain.jsに伝える
-    if (totalCountCallback) {
-      totalCountCallback(totalCount);
-    }
-
-    // RPC関数にOFFSETとLIMITの引数を渡すように変更
-    // タグ検索用の引数を追加
-    const rpcParams = {
-      p_offset: offset,
-      p_limit: limit,
-    };
-    if (tagNameOrId && tagNameOrId !== "") {
-      rpcParams.p_tag = tagNameOrId;
-    }
-
+    // RPCで書籍データ取得
+    const rpcParams = { p_offset: offset, p_limit: limit };
+    if (tagId && tagId !== "") rpcParams.p_tag = tagId;
     const { data: books, error: rpcError } = await supabaseClient.rpc(
       "get_books_with_aggregated_authors",
       rpcParams
     );
-
-    if (rpcError) {
-      console.error(`RPC呼び出し中にエラーが発生しました: ${rpcError.message}`);
-      throw rpcError;
-    }
-
-    // contentAreaDivElement が正しく渡されていることを確認
-    if (!contentAreaDivElement) {
-      console.error(
-        "#content-area element not found. It was not passed correctly."
-      );
-      return;
-    }
-
-    // #books-list 要素への参照を直接取得 (main.jsで既に作成されている前提)
-    const booksList = document.getElementById("books-list");
-    if (!booksList) {
-      console.error("#books-list element not found in #content-area.");
-      return;
-    }
-
-    // 既存の内容をクリア（innerHTMLを直接空にする方法）
-    booksList.innerHTML = "";
-
-    if (books && books.length > 0) {
-      books.forEach((book) => {
-        const title = book.title;
-        const subtitle = book.sub_title;
-        const edition = book.edition;
-        const bookName = `${title}${edition ? `  ${edition}` : ""}${
-          subtitle ? `  ―${subtitle}` : ""
-        }`;
-        const bookPages = book.pages;
-        const authorNames = book.author_names || "";
-        const supervisorNames = book.supervisor_names || "";
-        const translatorNames = book.translator_names || "";
-        const translationSupervisionNames =
-          book.translation_supervision_names || "";
-        const editorNames = book.editor_names || "";
-        const publisherName = book.publisher_name || "不明";
-        const price = Number(book.price).toLocaleString("ja-JP");
-        const isbn = formatIsbn(book.isbn);
-        const bookFormat = book.format_name || "不明";
-        const releaseDate = book.release_date || "不明";
-        const purchaseDate = book.purchase_date || "不明";
-        const bookCoverImageName = book.book_cover_image_name || "";
-
-        const bookItemDiv = document.createElement("div");
-        bookItemDiv.classList.add("book-item");
-
-        // --- 左側：表紙画像コンテナ ---
-        const bookCoverDiv = document.createElement("div");
-        bookCoverDiv.classList.add("book-cover");
-
-        const bookCoverImg = document.createElement("img");
-        if (bookCoverImageName) {
-          const { data: coverImageData } = supabaseClient.storage
-            .from("bookcovers") // バケット名
-            .getPublicUrl(bookCoverImageName); // ファイルパス
-          bookCoverImg.src = coverImageData
-            ? coverImageData.publicUrl
-            : "https://via.placeholder.com/150x225?text=No+Image";
-        } else {
-          bookCoverImg.src =
-            "https://via.placeholder.com/150x225?text=No+Image"; // 画像がない場合の代替
-        }
-        bookCoverImg.alt = "本の表紙";
-
-        bookCoverDiv.appendChild(bookCoverImg);
-
-        // --- 右側：本の情報コンテナ ---
-        const bookInfoDiv = document.createElement("div");
-        bookInfoDiv.classList.add("book-info");
-
-        const titleElement = document.createElement("h3");
-        titleElement.textContent = bookName;
-
-        bookInfoDiv.appendChild(titleElement);
-
-        const createParagraph = (labelText, value) => {
-          // 値が存在し、かつ "不明" や "N/A" ではない場合にのみp要素を生成
-          if (value && value !== "不明" && value !== "N/A") {
-            const p = document.createElement("p");
-            p.innerHTML = `<strong>${labelText}:</strong> ${value}`;
-            return p;
-          }
-          return null; // 要素を生成しない場合はnullを返す
-        };
-
-        // createParagraph が null を返す可能性があるので、null チェックを追加
-        let pElement = createParagraph("著者", authorNames);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("監修者", supervisorNames);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("翻訳者", translatorNames);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("監訳者", translationSupervisionNames);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("編集者", editorNames);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("出版社", publisherName);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("定価", `¥${price}`);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("ISBN", isbn);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("判型", bookFormat);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("頁数", `${bookPages}ページ`);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("発売日", releaseDate);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        pElement = createParagraph("購入日", purchaseDate);
-        if (pElement) bookInfoDiv.appendChild(pElement);
-
-        // descriptionがある場合は追加
-        if (book.description) {
-          const descriptionP = document.createElement("p");
-          descriptionP.textContent = book.description;
-          descriptionP.classList.add("description"); // CSSでスタイルを適用するためにクラスを追加
-          bookInfoDiv.appendChild(descriptionP);
-        }
-
-        bookItemDiv.appendChild(bookCoverDiv);
-        bookItemDiv.appendChild(bookInfoDiv);
-
-        booksList.appendChild(bookItemDiv);
-      });
-    } else {
-      booksList.innerHTML =
-        "<p style='text-align: center; color: #888;'>該当する書籍が見つかりませんでした。</p>";
-    }
+    if (rpcError) throw rpcError;
+    // React用：データ配列のみ返す
+    return books || [];
   } catch (error) {
     console.error("書籍データの取得中にエラーが発生しました:", error.message);
-    if (contentAreaDivElement) {
-      contentAreaDivElement.innerHTML = `
-                <h2>エラー</h2>
-                <p>書籍データの読み込みに失敗しました。Supabaseの設定、RLSポリシー、およびテーブル関係を確認してください。</p>
-                <p id="error-message">エラー詳細: ${error.message}</p>
-            `;
-    }
+    if (totalCountCallback) totalCountCallback(0);
+    return [];
   }
 }
 
 /**
  * 件数取得
  * @param {object} supabaseClient - Supabaseクライアントインスタンス
- * @param {number} selectedTagId - 選択されたタグのID
+ * @param {number} userId - ログインユーザID
+ * @param {number} tagId - 選択されたタグのID（省略可）
  * @returns 件数
  */
-export async function getTotalCount(supabaseClient, selectedTagId) {
-  // ユーザーID取得
-  const { data: userData } = await supabaseClient.auth.getUser();
-  const userId = userData?.user?.id;
-  // タグで絞り込んだ総件数を取得
-  const { data, error, count } = await supabaseClient
-    .from("user_books")
-    .select("book_id", { count: "exact", head: true })
-    .in(
-      "book_id",
-      (
-        await supabaseClient
-          .from("book_tags")
-          .select("book_id")
-          .eq("tag_id", selectedTagId)
-      ).data?.map((row) => row.book_id) || []
-    )
-    .eq("user_id", userId);
-  return count || 0;
+export async function getTotalCount(supabaseClient, userId, tagId = null) {
+  if (tagId == null) {
+    // タグ指定なし→全件
+    const { data, error, count } = await supabaseClient
+      .from("user_books")
+      .select("book_id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    return count || 0;
+  } else {
+    // タグ指定あり→タグで絞り込み
+    const { data, error, count } = await supabaseClient
+      .from("user_books")
+      .select("book_id", { count: "exact", head: true })
+      .in(
+        "book_id",
+        (
+          await supabaseClient
+            .from("book_tags")
+            .select("book_id")
+            .eq("tag_id", tagId)
+        ).data?.map((row) => row.book_id) || []
+      )
+      .eq("user_id", userId);
+    return count || 0;
+  }
 }
 
 /**

@@ -71,14 +71,13 @@ export function initializeAuthUI(elements, onLoginSuccessCallback) {
  * ログイン処理
  * @param {Function} onLoginSuccessCallback - ログイン成功時に呼び出すコールバック関数
  */
-async function handleSignIn(onLoginSuccessCallback) {
-  const email = emailInput.value;
-  const password = passwordInput.value;
+export async function handleSignIn(email, password, onLoginSuccessCallback) {
+  // email/passwordを引数で受け取る
 
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
+      email,
+      password,
     });
 
     if (error) {
@@ -88,12 +87,8 @@ async function handleSignIn(onLoginSuccessCallback) {
     }
 
     if (data && data.user) {
-      alert("ログイン成功！");
-      console.log("ログインユーザー:", data.user);
-      // ログイン成功時にUIを更新
-      updateAuthUI(data.session); // セッションを渡す
-      // ログイン成功時にコールバックを呼び出す際、supabaseとuserを渡す
-      onLoginSuccessCallback(supabase, data.user);
+      // React用: コールバックがあればsupabaseとuserを渡す
+      if (onLoginSuccessCallback) onLoginSuccessCallback(supabase, data.user);
     }
   } catch (error) {
     console.error("予期せぬログインエラー:", error);
@@ -104,29 +99,24 @@ async function handleSignIn(onLoginSuccessCallback) {
 /**
  * サインアップ処理
  */
-async function handleSignUp() {
-  const email = emailInput.value;
-  const password = passwordInput.value;
+export async function handleSignUp(email, password, onSignUpResult) {
+  // email/passwordを引数で受け取る
 
   try {
     const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email,
+      password,
     });
 
     if (error) {
-      alert("サインアップエラー: " + error.message);
-      console.error("サインアップエラー:", error);
+      if (onSignUpResult) onSignUpResult(error, null);
       return;
     }
 
     if (data && data.user) {
-      alert("サインアップ成功！メールをご確認ください。");
-      console.log("サインアップユーザー:", data.user);
+      if (onSignUpResult) onSignUpResult(null, data.user);
     } else if (data && data.session === null && data.user === null) {
-      alert(
-        "登録が成功しました。メールを確認してアカウントを有効化してください。"
-      );
+      if (onSignUpResult) onSignUpResult(null, null);
     }
   } catch (error) {
     console.error("予期せぬサインアップエラー:", error);
@@ -137,23 +127,13 @@ async function handleSignUp() {
 /**
  * ログアウト処理
  */
-async function handleSignOut() {
+export async function handleSignOut(onSignOutResult) {
   const { error } = await supabase.auth.signOut();
-
   if (error) {
-    alert("ログアウトエラー: " + error.message);
-    console.error("ログアウトエラー:", error);
+    if (onSignOutResult) onSignOutResult(error);
     return;
   }
-
-  alert("ログアウトしました。");
-  console.log("ログアウト成功");
-  updateAuthUI(null); // UIをログアウト状態に更新
-
-  // ★変更：contentAreaDiv.innerHTML をクリアする代わりに booksListElement.innerHTML をクリアする
-  if (booksListElement) {
-    booksListElement.innerHTML = ""; // 書籍リストの内容のみをクリア
-  }
+  if (onSignOutResult) onSignOutResult(null);
 }
 
 /**
