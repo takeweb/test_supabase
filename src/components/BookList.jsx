@@ -1,7 +1,7 @@
 import { getBookCoverUrl } from "../libs/bookUtil";
 import { supabase } from "../libs/supabaseClient";
 
-function BookList({ books }) {
+function BookList({ books, pagination }) {
   return (
     <div className="book-list">
       {books.length === 0 ? (
@@ -31,12 +31,16 @@ function BookList({ books }) {
                 <div>判型: {book.format_name || "-"}</div>
                 <div>頁数: {book.pages ? `${book.pages}ページ` : "-"}</div>
                 <div>発売日: {book.release_date || "-"}</div>
-                <div>購入日: {book.purchase_date || "-"}</div>
+                {book.purchase_date && (
+                  <div>購入日: {book.purchase_date}</div>
+                )}
               </div>
             </div>
           );
         })
       )}
+      {/* ページネーションを枠内下部に表示（上マージン追加） */}
+      <div className="mt-6">{pagination}</div>
     </div>
   );
 }
