@@ -4,7 +4,12 @@ import AuthForm from "./components/AuthForm";
 import BookList from "./components/BookList";
 import Pagination from "./components/Pagination";
 import TagSelect from "./components/TagSelect";
-import { handleSignUp as authHandleSignUp, handleSignIn, handleSignOut } from "./libs/auth";
+import UserIcon from "./components/UserIcon";
+import {
+  handleSignUp as authHandleSignUp,
+  handleSignIn,
+  handleSignOut,
+} from "./libs/auth";
 import { getJoinedBooksData, getTagSelectData } from "./libs/bookUtil";
 import { supabase } from "./libs/supabaseClient";
 
@@ -35,32 +40,36 @@ function App() {
     if (!userMenuOpen) return;
     const handleClick = (e) => {
       // ドロップダウンとボタン以外をクリックしたら閉じる
-      const menu = document.getElementById('user-menu-dropdown');
-      const btn = document.getElementById('user-menu-btn');
+      const menu = document.getElementById("user-menu-dropdown");
+      const btn = document.getElementById("user-menu-btn");
       if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
         setUserMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [userMenuOpen]);
 
   // 認証状態監視
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
     // 初期セッション取得
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
     });
-    return () => { listener.subscription.unsubscribe(); };
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   // タグ一覧取得
   useEffect(() => {
     if (!user) return;
-    getTagSelectData(supabase).then(tags => setTags(tags || []));
+    getTagSelectData(supabase).then((tags) => setTags(tags || []));
   }, [user]);
 
   // 書籍データ取得
@@ -113,83 +122,120 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* 固定タイトルバー＋タグセレクト */}
-      <div className="w-full fixed top-0 left-0 z-40 bg-blue-50 border-b border-blue-200 shadow" style={{minWidth: 0, maxWidth: '100vw'}}>
-        <div className="flex flex-row items-center justify-center px-6 py-1 gap-6 pt-2">
-          <h1 className="text-2xl font-bold text-blue-900 tracking-tight whitespace-nowrap flex items-end mb-0">Supabase 書籍リスト</h1>
-          {/* タグセレクト（ログイン時のみ） */}
-          {user && (
-            <div className="flex items-center justify-center mt-4">
-              <TagSelect
-                tags={tags}
-                selectedTag={selectedTag}
-                setSelectedTag={setSelectedTag}
-                setCurrentPage={setCurrentPage}
-              />
-            </div>
-          )}
-          {user && (
-            <div className="relative flex items-end mb-0">
-              <button
-                id="user-menu-btn"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                onClick={() => setUserMenuOpen((open) => !open)}
-                aria-label="ユーザーメニュー"
-              >
-                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.485-8.485l-.707.707M4.222 4.222l-.707.707m16.97 0l-.707-.707M4.222 19.778l-.707-.707" /></svg>
-              </button>
-              {userMenuOpen && (
-                <div id="user-menu-dropdown" className="absolute top-full right-0 mt-2 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col p-4 gap-2 min-w-[200px]">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m8.485-8.485l-.707.707M4.222 4.222l-.707.707m16.97 0l-.707-.707M4.222 19.778l-.707-.707" /></svg>
-                    <span className="text-blue-800 font-semibold text-sm break-all">{user.email}</span>
+    <>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        {/* 固定タイトルバー＋タグセレクト */}
+        <div
+          className="w-full fixed top-0 left-0 z-40 bg-blue-50 border-b border-blue-200 shadow"
+          style={{ minWidth: 0, maxWidth: "100vw" }}
+        >
+          <div className="flex flex-row items-center justify-center px-6 py-1 gap-6 pt-2">
+            <h1 className="text-2xl font-bold text-blue-900 tracking-tight whitespace-nowrap flex items-end mb-0">
+              Supabase 書籍リスト
+            </h1>
+            {/* タグセレクト（ログイン時のみ） */}
+            {user && (
+              <div className="flex items-center justify-center mt-4">
+                <TagSelect
+                  tags={tags}
+                  selectedTag={selectedTag}
+                  setSelectedTag={setSelectedTag}
+                  setCurrentPage={setCurrentPage}
+                />
+              </div>
+            )}
+            {user && (
+              <div className="relative flex items-end mb-0">
+                <button
+                  id="user-menu-btn"
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  onClick={() => setUserMenuOpen((open) => !open)}
+                  aria-label="ユーザーメニュー"
+                >
+                  <UserIcon className="w-6 h-6 text-blue-500" />
+                </button>
+                {userMenuOpen && (
+                  <div
+                    id="user-menu-dropdown"
+                    className="absolute top-full right-0 mt-2 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col p-4 gap-2 min-w-[200px]"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg
+                        className="w-5 h-5 text-blue-500"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        ></path>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 3v1m0 16v1m8.485-8.485l-.707.707M4.222 4.222l-.707.707m16.97 0l-.707-.707M4.222 19.778l-.707-.707"
+                        />
+                      </svg>
+                      <span className="text-blue-800 font-semibold text-sm break-all">
+                        {user.email}
+                      </span>
+                    </div>
+                    <span className="text-xs text-blue-400 bg-blue-100 rounded px-2 py-0.5 w-fit">
+                      ログイン中
+                    </span>
+                    <button
+                      className="mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition shadow text-sm"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      ログアウト
+                    </button>
                   </div>
-                  <span className="text-xs text-blue-400 bg-blue-100 rounded px-2 py-0.5 w-fit">ログイン中</span>
-                  <button
-                    className="mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition shadow text-sm"
-                    onClick={() => { setUserMenuOpen(false); handleLogout(); }}
-                  >ログアウト</button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* メインコンテンツ（スクロール） */}
+        <div className="flex-1 flex flex-col items-center pt-24 px-2 max-w-3xl mx-auto w-full">
+          {/* 認証UI */}
+          {!user && (
+            <AuthForm
+              authMode={authMode}
+              email={email}
+              password={password}
+              authError={authError}
+              setEmail={setEmail}
+              setPassword={setPassword}
+              setAuthMode={setAuthMode}
+              handleLogin={handleLogin}
+              handleSignUp={handleSignUp}
+            />
+          )}
+
+          {/* タグセレクトは上部固定に移動済み */}
+
+          {/* 書籍リスト（ログイン時のみ） */}
+          {user && (
+            <BookList
+              books={books}
+              pagination={
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  setCurrentPage={handleSetCurrentPage}
+                />
+              }
+            />
           )}
         </div>
       </div>
-      {/* メインコンテンツ（スクロール） */}
-      <div className="flex-1 flex flex-col items-center pt-24 px-2 max-w-3xl mx-auto w-full">
-        {/* 認証UI */}
-        {!user && (
-          <AuthForm
-            authMode={authMode}
-            email={email}
-            password={password}
-            authError={authError}
-            setEmail={setEmail}
-            setPassword={setPassword}
-            setAuthMode={setAuthMode}
-            handleLogin={handleLogin}
-            handleSignUp={handleSignUp}
-          />
-        )}
-
-        {/* タグセレクトは上部固定に移動済み */}
-
-        {/* 書籍リスト（ログイン時のみ） */}
-        {user && (
-          <BookList
-            books={books}
-            pagination={
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                setCurrentPage={handleSetCurrentPage}
-              />
-            }
-          />
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 
