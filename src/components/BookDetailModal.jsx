@@ -122,6 +122,9 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
           <h2 className="text-xl font-bold mb-4">{book.title}</h2>
         </div>
         <p><strong>著者:</strong> {book.author_names || "-"}</p>
+        {book.translator_names && (
+          <div>翻訳者: {book.translator_names || "-"}</div>
+        )}
         <p><strong>出版社:</strong> {book.publisher_name || "-"}</p>
         <p><strong>定価:</strong> {book.price ? `¥${book.price.toLocaleString()}` : "-"}</p>
         <p><strong>ISBN-10:</strong> {book.isbn_10 || "-"}</p>
