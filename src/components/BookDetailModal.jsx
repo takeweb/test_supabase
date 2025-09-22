@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../libs/supabaseClient";
 import { getBookCoverUrl } from "../libs/bookUtil";
 
-const BookDetailModal = ({ book, onClose }) => {
+const BookDetailModal = ({ book, onClose, onUpdate }) => {
   if (!book) return null; // bookがnullの場合は何も表示しない
 
   const [purchaseDate, setPurchaseDate] = useState(book.purchase_date || ""); // nullの場合は空文字列を設定
@@ -78,10 +78,30 @@ const BookDetailModal = ({ book, onClose }) => {
       if (insertError) {
         console.error("タグの挿入に失敗しました:", insertError);
         alert("タグの追加に失敗しました。", insertError.message);
-      } else {
-        alert("タグが更新されました。");
-        onClose();
+        return;
       }
+
+      // purchase_dateを更新
+      const { error: updateError } = await supabase
+        .from("user_books")
+        .update({ purchase_date: purchaseDate })
+        .eq("user_id", book.user_id)
+        .eq("book_id", book.id);
+
+      if (updateError) {
+        console.error("購入日の更新に失敗しました:", updateError);
+        alert("購入日の更新に失敗しました。");
+        return;
+      }
+
+      alert("購入日とタグが更新されました。");
+
+      // 親コンポーネントに更新を通知
+      if (onUpdate) {
+        onUpdate();
+      }
+
+      onClose();
     } catch (err) {
       console.error("予期せぬエラー:", err);
       alert("予期せぬエラーが発生しました。");
@@ -128,7 +148,7 @@ const BookDetailModal = ({ book, onClose }) => {
           <p className="text-sm font-medium text-gray-700">タグ:</p>
           <div
             className="flex flex-wrap gap-2 mt-2 overflow-y-auto"
-            style={{ maxHeight: "150px" }} // 高さを制限してスクロール可能に
+            style={{ maxHeight: "120px" }} // 高さを制限してスクロール可能に
           >
             {tags.map((tag) => (
               <label key={tag.id} className="flex items-center">

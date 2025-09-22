@@ -15,6 +15,7 @@ RETURNS TABLE (
     publisher_name character varying,
     price bigint,
     isbn character varying,
+    isbn_10 text,
     release_date date,
     format_name text,
     purchase_date date
@@ -54,6 +55,7 @@ BEGIN
             p.publisher_name,
             b.price,
             b.isbn,
+            b.isbn_10,
             b.release_date,
             f.format_name,
             ub.purchase_date

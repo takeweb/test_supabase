@@ -1,7 +1,14 @@
 import { getBookCoverUrl } from "../libs/bookUtil";
 import { supabase } from "../libs/supabaseClient";
+import { useEffect } from "react";
 
-function BookList({ books, pagination, onBookClick }) {
+function BookList({ books, pagination, onBookClick, onUpdate }) {
+  useEffect(() => {
+    if (onUpdate) {
+      onUpdate();
+    }
+  }, [onUpdate]);
+
   if (books.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-[56px] w-full">
@@ -9,6 +16,7 @@ function BookList({ books, pagination, onBookClick }) {
       </div>
     );
   }
+
   return (
     <div className="book-list">
       {books.map(book => {
@@ -40,7 +48,8 @@ function BookList({ books, pagination, onBookClick }) {
               )}
               <div>出版社: {book.publisher_name || "-"}</div>
               <div>定価: {book.price ? `¥${book.price.toLocaleString()}` : "-"}</div>
-              <div>ISBN: {book.isbn || "-"}</div>
+              <div>ISBN-10: {book.isbn_10 || "-"}</div>
+              <div>ISBN-13: {book.isbn || "-"}</div>
               <div>判型: {book.format_name || "-"}</div>
               <div>頁数: {book.pages ? `${book.pages}ページ` : "-"}</div>
               <div>発売日: {book.release_date || "-"}</div>

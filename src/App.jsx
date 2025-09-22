@@ -221,6 +221,18 @@ function App() {
               <BookDetailModal
                 book={selectedBook}
                 onClose={() => setSelectedBook(null)}
+                onUpdate={() => {
+                  // 書籍データを再取得
+                  getJoinedBooksData(
+                    supabase,
+                    currentPage,
+                    5, // itemsPerPage
+                    (count) => setTotalPages(Math.max(1, Math.ceil(count / 5))),
+                    selectedTag === "" ? null : selectedTag
+                  ).then((books) => {
+                    if (books) setBooks(books);
+                  });
+                }}
               />
             </>
           )}

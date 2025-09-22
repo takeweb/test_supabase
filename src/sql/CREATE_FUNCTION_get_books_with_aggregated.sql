@@ -12,17 +12,19 @@ RETURNS TABLE (
     sub_title text,
     pages bigint,
     book_cover_image_name text,
-    author_names text,
-    supervisor_names text,
-    translator_names text,
-    translation_supervision_names text,
-    editor_names text,
+    author_names character varying,
+    supervisor_names character varying,
+    translator_names character varying,
+    translation_supervision_names character varying,
+    editor_names character varying,
     publisher_name character varying,
     price bigint,
     isbn character varying,
+    isbn_10 text,
     release_date date,
     format_name text,
-    purchase_date date
+    purchase_date date,
+    tags character varying
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -30,7 +32,7 @@ BEGIN
         WITH AuthorsAggregated AS (
             SELECT
                 bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
             INNER JOIN
@@ -43,7 +45,7 @@ BEGIN
         SupervisorsAggregated AS (
             SELECT
                 bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
             INNER JOIN
@@ -56,7 +58,7 @@ BEGIN
         TranslatorsAggregated AS (
             SELECT
                 bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
             INNER JOIN
@@ -69,7 +71,7 @@ BEGIN
         TranslationSupervisionsAggregated AS (
             SELECT
                 bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
             INNER JOIN
@@ -82,7 +84,7 @@ BEGIN
         EditorsAggregated AS (
             SELECT
                 bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id) AS names
+                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
             INNER JOIN
@@ -91,6 +93,17 @@ BEGIN
                 bp.role_id = 6 -- 編集者
             GROUP BY
                 bp.book_id
+        ),
+        TagsAggregated AS (
+            SELECT
+                bt.book_id,
+                STRING_AGG(tg.tag_name, ', ' ORDER BY tg.tag_name)::character varying AS tags
+            FROM
+                book_tags bt
+            INNER JOIN
+                tags tg ON tg.id = bt.tag_id
+            GROUP BY
+                bt.book_id
         )
         SELECT
             b.id,
@@ -107,9 +120,11 @@ BEGIN
             p.publisher_name,
             b.price,
             b.isbn,
+            b.isbn_10,
             b.release_date,
             f.format_name,
-            ub.purchase_date
+            ub.purchase_date,
+            COALESCE(tg.tags, '') AS tags
         FROM
             books b
         INNER JOIN publishers p
@@ -128,15 +143,19 @@ BEGIN
             ON tsa.book_id = b.id
         LEFT JOIN EditorsAggregated e
             ON e.book_id = b.id
-        LEFT JOIN book_tags bt
-            ON bt.book_id = b.id
-        LEFT JOIN tags tg
-            ON tg.id = bt.tag_id
+        LEFT JOIN TagsAggregated tg
+            ON tg.book_id = b.id
         WHERE
             (
                 p_tag IS NULL
-                OR (tg.id = p_tag)
+                OR EXISTS (
+                    SELECT 1
+                    FROM book_tags bt
+                    WHERE bt.book_id = b.id AND bt.tag_id = p_tag
+                )
             )
+        GROUP BY
+            b.id, p.publisher_name, f.format_name, ub.purchase_date, aa.names, sa.names, ta.names, tsa.names, e.names, tg.tags
         ORDER BY
             b.id
         OFFSET p_offset

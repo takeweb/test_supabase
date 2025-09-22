@@ -122,7 +122,7 @@ export async function getTagSelectData(supabaseClient) {
   const { data, error } = await supabaseClient
     .from("tags")
     .select("id, tag_name")
-    .order("id");
+    .order("tag_name");
   if (error) {
     console.error("タグ取得エラー:", error);
     return;
