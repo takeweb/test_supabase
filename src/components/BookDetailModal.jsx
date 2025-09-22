@@ -124,7 +124,8 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         <p><strong>著者:</strong> {book.author_names || "-"}</p>
         <p><strong>出版社:</strong> {book.publisher_name || "-"}</p>
         <p><strong>定価:</strong> {book.price ? `¥${book.price.toLocaleString()}` : "-"}</p>
-        <p><strong>ISBN:</strong> {book.isbn || "-"}</p>
+        <p><strong>ISBN-10:</strong> {book.isbn_10 || "-"}</p>
+        <p><strong>ISBN-13:</strong> {book.isbn || "-"}</p>
         <p><strong>判型:</strong> {book.format_name || "-"}</p>
         <p><strong>頁数:</strong> {book.pages ? `${book.pages}ページ` : "-"}</p>
         <p><strong>発売日:</strong> {book.release_date || "-"}</p>
