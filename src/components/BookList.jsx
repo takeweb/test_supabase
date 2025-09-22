@@ -1,7 +1,7 @@
 import { getBookCoverUrl } from "../libs/bookUtil";
 import { supabase } from "../libs/supabaseClient";
 
-function BookList({ books, pagination }) {
+function BookList({ books, pagination, onBookClick }) {
   if (books.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-[56px] w-full">
@@ -17,7 +17,14 @@ function BookList({ books, pagination }) {
         const edition = book.edition;
         const bookName = `${title}${edition ? `  ${edition}` : ""}${subtitle ? `  ―${subtitle}` : ""}`;
         return (
-          <div key={book.id} className="book-item">
+          <div
+            key={book.id}
+            className="book-item cursor-pointer"
+            onClick={() => {
+              console.log("BookListでクリックされたbook:", book);
+              onBookClick(book);
+            }}
+          >
             <div className="book-cover">
               <img
                 src={getBookCoverUrl(supabase, book.book_cover_image_name)}

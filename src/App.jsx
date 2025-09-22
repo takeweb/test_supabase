@@ -5,6 +5,7 @@ import BookList from "./components/BookList";
 import Pagination from "./components/Pagination";
 import TagSelect from "./components/TagSelect";
 import UserIcon from "./components/UserIcon";
+import BookDetailModal from "./components/BookDetailModal";
 import {
   handleSignUp as authHandleSignUp,
   handleSignIn,
@@ -28,6 +29,7 @@ function App() {
   const [books, setBooks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedBook, setSelectedBook] = useState(null);
 
   // ページ変更時に上部へスクロール
   const handleSetCurrentPage = (page) => {
@@ -121,6 +123,8 @@ function App() {
     });
   };
 
+  console.log("App.jsxで選択されたbook:", selectedBook);
+
   return (
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -202,16 +206,23 @@ function App() {
 
           {/* 書籍リスト（ログイン時のみ） */}
           {user && (
-            <BookList
-              books={books}
-              pagination={
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  setCurrentPage={handleSetCurrentPage}
-                />
-              }
-            />
+            <>
+              <BookList
+                books={books}
+                pagination={
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    setCurrentPage={handleSetCurrentPage}
+                  />
+                }
+                onBookClick={(book) => setSelectedBook(book)}
+              />
+              <BookDetailModal
+                book={selectedBook}
+                onClose={() => setSelectedBook(null)}
+              />
+            </>
           )}
         </div>
       </div>
