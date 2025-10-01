@@ -17,13 +17,19 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
     );
   }
 
+  const formatBookTitle = (book) => {
+    const title = book.title || "";
+    const subtitle = book.sub_title || "";
+    const edition = book.edition || "";
+    const label_name = book.label_name;
+    const classification_code = book.classification_code;
+
+    return `${title}${edition ? ` ${edition}` : ""}${subtitle ? `  ―${subtitle}` : ""}${classification_code ? ` (${label_name} ${classification_code})` : ""}`;
+  };
+
   return (
     <div className="book-list">
       {books.map(book => {
-        const title = book.title;
-        const subtitle = book.sub_title;
-        const edition = book.edition;
-        const bookName = `${title}${edition ? `  ${edition}` : ""}${subtitle ? `  ―${subtitle}` : ""}`;
         return (
           <div
             key={book.id}
@@ -41,7 +47,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
               />
             </div>
             <div className="book-detail">
-              <div className="book-title">{bookName}</div>
+              <div className="book-title">{formatBookTitle(book)}</div>
               <div>著者: {book.author_names || "-"}</div>
               {book.translator_names && (
                 <div>翻訳者: {book.translator_names || "-"}</div>
@@ -55,6 +61,9 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
               <div>発売日: {book.release_date || "-"}</div>
               {book.purchase_date && (
                 <div>購入日: {book.purchase_date}</div>
+              )}
+              {book.read_end_date && (
+                <div>読了日: {book.read_end_date}</div>
               )}
             </div>
           </div>

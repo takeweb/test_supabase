@@ -5,7 +5,8 @@ import { getBookCoverUrl } from "../libs/bookUtil";
 const BookDetailModal = ({ book, onClose, onUpdate }) => {
   if (!book) return null; // bookがnullの場合は何も表示しない
 
-  const [purchaseDate, setPurchaseDate] = useState(book.purchase_date || ""); // nullの場合は空文字列を設定
+  const [purchaseDate, setPurchaseDate] = useState(book.purchase_date || ""); // 購入日
+  const [readEndDate, setReadEndDate] = useState(book.read_end_date || ""); // 読了日 
   const [tags, setTags] = useState([]); // タグ一覧
   const [selectedTags, setSelectedTags] = useState([]); // 選択されたタグ
 
@@ -82,19 +83,36 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
       }
 
       // purchase_dateを更新
-      const { error: updateError } = await supabase
-        .from("user_books")
-        .update({ purchase_date: purchaseDate })
-        .eq("user_id", book.user_id)
-        .eq("book_id", book.id);
+      if (purchaseDate) {
+        const { error: updateError } = await supabase
+          .from("user_books")
+          .update({ purchase_date: purchaseDate })
+          .eq("user_id", book.user_id)
+          .eq("book_id", book.id);
 
-      if (updateError) {
-        console.error("購入日の更新に失敗しました:", updateError);
-        alert("購入日の更新に失敗しました。");
-        return;
+        if (updateError) {
+          console.error("購入日の更新に失敗しました:", updateError);
+          alert("購入日の更新に失敗しました。");
+          return;
+        }
       }
 
-      alert("購入日とタグが更新されました。");
+      // read_end_dateを更新
+      if (readEndDate) {
+        const { error: updateError } = await supabase
+          .from("user_books")
+          .update({ read_end_date: readEndDate })
+          .eq("user_id", book.user_id)
+          .eq("book_id", book.id);
+
+        if (updateError) {
+          console.error("読了日の更新に失敗しました:", updateError);
+          alert("読了日の更新に失敗しました。");
+          return;
+        }
+      }
+
+      alert("更新されました。");
 
       // 親コンポーネントに更新を通知
       if (onUpdate) {
@@ -108,7 +126,17 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
     }
   };
 
-  console.log("BookDetailModalに渡されたbookオブジェクト:", book); // 追加: bookオブジェクトのデバッグログ
+  const formatBookTitle = (book) => {
+    const title = book.title || "";
+    const subtitle = book.sub_title || "";
+    const edition = book.edition || "";
+    const label_name = book.label_name;
+    const classification_code = book.classification_code;
+
+    return `${title}${edition ? ` ${edition}` : ""}${subtitle ? `  ―${subtitle}` : ""}${classification_code ? ` (${label_name} ${classification_code})` : ""}`;
+  };
+
+  // console.log("BookDetailModalに渡されたbookオブジェクト:", book); // 追加: bookオブジェクトのデバッグログ
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -119,7 +147,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
             alt="表紙画像"
             className="w-48 h-auto mb-4 rounded" // 表紙画像を大きく
           />
-          <h2 className="text-xl font-bold mb-4">{book.title}</h2>
+          <h2 className="text-xl font-bold mb-4">{formatBookTitle(book)}</h2>
         </div>
         <p><strong>著者:</strong> {book.author_names || "-"}</p>
         {book.translator_names && (
@@ -134,7 +162,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         <p><strong>発売日:</strong> {book.release_date || "-"}</p>
         
 
-        <div className="mt-4 flex items-center"> {/* ラベルと入力欄を横並びに */}
+        <div className="mt-4 flex items-center">
           <label htmlFor="purchase-date" className="block text-sm font-medium text-gray-700 mr-2">
             <strong>購入日:</strong>
           </label>
@@ -143,6 +171,18 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
             id="purchase-date"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
+            className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2" // テキストサイズを統一
+          />
+        </div>
+          <div className="mt-4 flex items-center">
+          <label htmlFor="purchase-date" className="block text-sm font-medium text-gray-700 mr-2">
+            <strong>読了日:</strong>
+          </label>
+          <input
+            type="date"
+            id="read-end-date"
+            value={readEndDate}
+            onChange={(e) => setReadEndDate(e.target.value)}
             className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2" // テキストサイズを統一
           />
         </div>

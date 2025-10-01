@@ -24,7 +24,10 @@ RETURNS TABLE (
     release_date date,
     format_name text,
     purchase_date date,
-    tags character varying
+    tags character varying,
+    read_end_date date,
+    label_name text,
+    classification_code text
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -94,7 +97,7 @@ BEGIN
             GROUP BY
                 bp.book_id
         ),
-        TagsAggregated AS (
+        TagsAggregated AS ( -- タグ集約
             SELECT
                 bt.book_id,
                 STRING_AGG(tg.tag_name, ', ' ORDER BY tg.tag_name)::character varying AS tags
@@ -124,7 +127,10 @@ BEGIN
             b.release_date,
             f.format_name,
             ub.purchase_date,
-            COALESCE(tg.tags, '') AS tags
+            COALESCE(tg.tags, '') AS tags,
+            ub.read_end_date,
+            l.label_name,
+            b.classification_code
         FROM
             books b
         INNER JOIN publishers p
@@ -145,6 +151,8 @@ BEGIN
             ON e.book_id = b.id
         LEFT JOIN TagsAggregated tg
             ON tg.book_id = b.id
+        LEFT JOIN labels l
+            ON l.id = b.label_id
         WHERE
             (
                 p_tag IS NULL
@@ -155,9 +163,20 @@ BEGIN
                 )
             )
         GROUP BY
-            b.id, p.publisher_name, f.format_name, ub.purchase_date, aa.names, sa.names, ta.names, tsa.names, e.names, tg.tags
+            b.id, 
+            p.publisher_name, 
+            f.format_name, 
+            ub.purchase_date, 
+            ub.read_end_date, 
+            aa.names, 
+            sa.names, 
+            ta.names, 
+            tsa.names, 
+            e.names, 
+            tg.tags,
+            l.label_name
         ORDER BY
-            b.id
+            b.release_date
         OFFSET p_offset
         LIMIT p_limit;
 END;

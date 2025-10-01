@@ -1,4 +1,4 @@
-DROP FUNCTION get_book_info(p_isbn_10 INT);
+DROP FUNCTION get_book_info(p_isbn_10  character varying);
 CREATE OR REPLACE FUNCTION get_book_info(p_isbn_10 character varying)
 RETURNS TABLE (
     id bigint,
@@ -18,7 +18,9 @@ RETURNS TABLE (
     isbn_10 text,
     release_date date,
     format_name text,
-    purchase_date date
+    purchase_date date,
+    label_name text,
+    classification_code text
 )
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -58,7 +60,9 @@ BEGIN
             b.isbn_10,
             b.release_date,
             f.format_name,
-            ub.purchase_date
+            ub.purchase_date,
+            l.label_name,
+            b.classification_code
         FROM
             books b
         INNER JOIN publishers p
@@ -69,6 +73,8 @@ BEGIN
             ON f.id = b.format_id
         LEFT JOIN PersonsAggregated pa
             ON pa.book_id = b.id
+        LEFT JOIN labels l
+            ON l.id = b.label_id
         WHERE
           b.isbn_10 = p_isbn_10
         LIMIT 1;
