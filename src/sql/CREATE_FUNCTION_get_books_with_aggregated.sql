@@ -176,7 +176,8 @@ BEGIN
             tg.tags,
             l.label_name
         ORDER BY
-            b.release_date
+            b.release_date,
+            b.classification_code
         OFFSET p_offset
         LIMIT p_limit;
 END;
