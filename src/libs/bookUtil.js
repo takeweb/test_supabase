@@ -17,7 +17,6 @@ export function getBookCoverUrl(supabaseClient, bookCoverImageName) {
   }
   return noImageUrl;
 }
-// libs/bookUtil.js
 
 /**
  * SupabaseからRPC関数を呼び出してデータを取得し、Webページに表示する関数
@@ -68,7 +67,10 @@ export async function getJoinedBooksData(
     );
     if (rpcError) throw rpcError;
     // React用：データ配列のみ返す
-    return books || [];
+    return books.map((book) => ({
+      ...book,
+      user_id: userId, // user_idを追加
+    }));
   } catch (error) {
     console.error("書籍データの取得中にエラーが発生しました:", error.message);
     if (totalCountCallback) totalCountCallback(0);
@@ -120,7 +122,7 @@ export async function getTagSelectData(supabaseClient) {
   const { data, error } = await supabaseClient
     .from("tags")
     .select("id, tag_name")
-    .order("id");
+    .order("tag_name");
   if (error) {
     console.error("タグ取得エラー:", error);
     return;

@@ -5,3 +5,4 @@ dist/
 README.md
 Dockerfile
 supabase/
+sql/
