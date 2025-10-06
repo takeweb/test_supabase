@@ -22,7 +22,9 @@ RETURNS TABLE (
     label_name text,
     classification_code text
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path TO public
+AS $$
 BEGIN
     RETURN QUERY
         WITH PersonsAggregated AS (
