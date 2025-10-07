@@ -6,7 +6,7 @@ import { defineConfig } from "vite";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "/book/",
+  // base: "/book/",
   server: {
     port: 5174,
   },
