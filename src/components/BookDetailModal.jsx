@@ -17,7 +17,9 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
       if (error) {
         console.error("タグの取得に失敗しました:", error);
       } else {
-        setTags(data || []);
+        // tag_nameで昇順にソート
+        const sortedTags = (data || []).sort((a, b) => a.tag_name.localeCompare(b.tag_name));
+        setTags(sortedTags);
       }
     };
     fetchTags();
