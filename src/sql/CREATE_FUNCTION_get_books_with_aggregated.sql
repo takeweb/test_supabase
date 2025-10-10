@@ -34,81 +34,24 @@ SET search_path TO public
 AS $$
 BEGIN
     RETURN QUERY
-        WITH AuthorsAggregated AS (
+        WITH role_agg AS (
             SELECT
                 bp.book_id,
+                bp.role_id,
                 STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
                 book_persons bp
-            INNER JOIN
-                persons p ON p.id = bp.person_id
-            WHERE
-                bp.role_id = 1 -- 著者
-            GROUP BY
-                bp.book_id
+            JOIN persons p ON p.id = bp.person_id
+            GROUP BY bp.book_id, bp.role_id
         ),
-        SupervisorsAggregated AS (
-            SELECT
-                bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
-            FROM
-                book_persons bp
-            INNER JOIN
-                persons p ON p.id = bp.person_id
-            WHERE
-                bp.role_id = 2 -- 監修者
-            GROUP BY
-                bp.book_id
-        ),
-        TranslatorsAggregated AS (
-            SELECT
-                bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
-            FROM
-                book_persons bp
-            INNER JOIN
-                persons p ON p.id = bp.person_id
-            WHERE
-                bp.role_id = 4 -- 翻訳者
-            GROUP BY
-                bp.book_id
-        ),
-        TranslationSupervisionsAggregated AS (
-            SELECT
-                bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
-            FROM
-                book_persons bp
-            INNER JOIN
-                persons p ON p.id = bp.person_id
-            WHERE
-                bp.role_id = 5 -- 監訳者
-            GROUP BY
-                bp.book_id
-        ),
-        EditorsAggregated AS (
-            SELECT
-                bp.book_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
-            FROM
-                book_persons bp
-            INNER JOIN
-                persons p ON p.id = bp.person_id
-            WHERE
-                bp.role_id = 6 -- 編集者
-            GROUP BY
-                bp.book_id
-        ),
-        TagsAggregated AS ( -- タグ集約
+        tags_agg AS (
             SELECT
                 bt.book_id,
                 STRING_AGG(tg.tag_name, ', ' ORDER BY tg.tag_name)::character varying AS tags
             FROM
                 book_tags bt
-            INNER JOIN
-                tags tg ON tg.id = bt.tag_id
-            GROUP BY
-                bt.book_id
+            JOIN tags tg ON tg.id = bt.tag_id
+            GROUP BY bt.book_id
         )
         SELECT
             b.id,
@@ -117,10 +60,10 @@ BEGIN
             b.sub_title,
             b.pages,
             b.book_cover_image_name,
-            COALESCE(aa.names, '') AS author_names,
-            COALESCE(sa.names, '') AS supervisor_names,
-            COALESCE(ta.names, '') AS translator_names,
-            COALESCE(tsa.names, '') AS translation_supervision_names,
+            COALESCE(a.names, '') AS author_names,
+            COALESCE(s.names, '') AS supervisor_names,
+            COALESCE(t.names, '') AS translator_names,
+            COALESCE(ts.names, '') AS translation_supervision_names,
             COALESCE(e.names, '') AS editor_names,
             p.publisher_name,
             b.price,
@@ -133,53 +76,26 @@ BEGIN
             ub.read_end_date,
             l.label_name,
             b.classification_code
-        FROM
-            books b
-        INNER JOIN publishers p
-            ON p.id = b.publisher_id
-        INNER JOIN user_books ub
-            ON ub.book_id = b.id
-        INNER JOIN formats f
-            ON f.id = b.format_id
-        LEFT JOIN AuthorsAggregated aa
-            ON aa.book_id = b.id
-        LEFT JOIN SupervisorsAggregated sa
-            ON sa.book_id = b.id
-        LEFT JOIN TranslatorsAggregated ta
-            ON ta.book_id = b.id
-        LEFT JOIN TranslationSupervisionsAggregated tsa
-            ON tsa.book_id = b.id
-        LEFT JOIN EditorsAggregated e
-            ON e.book_id = b.id
-        LEFT JOIN TagsAggregated tg
-            ON tg.book_id = b.id
-        LEFT JOIN labels l
-            ON l.id = b.label_id
+        FROM books b
+        JOIN publishers p ON p.id = b.publisher_id
+        JOIN user_books ub ON ub.book_id = b.id
+        JOIN formats f ON f.id = b.format_id
+        LEFT JOIN role_agg a ON a.book_id = b.id AND a.role_id = 1
+        LEFT JOIN role_agg s ON s.book_id = b.id AND s.role_id = 2
+        LEFT JOIN role_agg t ON t.book_id = b.id AND t.role_id = 4
+        LEFT JOIN role_agg ts ON ts.book_id = b.id AND ts.role_id = 5
+        LEFT JOIN role_agg e ON e.book_id = b.id AND e.role_id = 6
+        LEFT JOIN tags_agg tg ON tg.book_id = b.id
+        LEFT JOIN labels l ON l.id = b.label_id
         WHERE
-            (
-                p_tag IS NULL
-                OR EXISTS (
-                    SELECT 1
-                    FROM book_tags bt
-                    WHERE bt.book_id = b.id AND bt.tag_id = p_tag
-                )
-            )
-        GROUP BY
-            b.id, 
-            p.publisher_name, 
-            f.format_name, 
-            ub.purchase_date, 
-            ub.read_end_date, 
-            aa.names, 
-            sa.names, 
-            ta.names, 
-            tsa.names, 
-            e.names, 
-            tg.tags,
-            l.label_name
+            (p_tag IS NULL OR EXISTS (
+                SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.tag_id = p_tag
+            ))
         ORDER BY
-            b.release_date,
-            b.classification_code
+            b.release_date NULLS LAST,
+            split_part(b.classification_code, ' ', 1),
+            NULLIF(split_part(split_part(b.classification_code, ' ', 2), '-', 1), '')::int NULLS LAST,
+            NULLIF(split_part(split_part(b.classification_code, ' ', 2), '-', 2), '')::int NULLS LAST
         OFFSET p_offset
         LIMIT p_limit;
 END;
