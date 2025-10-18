@@ -17,6 +17,7 @@ RETURNS TABLE (
     translator_names character varying,
     translation_supervision_names character varying,
     editor_names character varying,
+    illustrator_names character varying,
     publisher_name character varying,
     price bigint,
     isbn character varying,
@@ -24,8 +25,8 @@ RETURNS TABLE (
     release_date date,
     format_name text,
     purchase_date date,
-    tags character varying,
     read_end_date date,
+    tags character varying,
     label_name text,
     classification_code text
 )
@@ -36,13 +37,13 @@ BEGIN
     RETURN QUERY
         WITH role_agg AS (
             SELECT
-                bp.book_id,
-                bp.role_id,
-                STRING_AGG(p.person_name, ', ' ORDER BY p.id)::character varying AS names
+                bc.book_id,
+                bc.role_id,
+                STRING_AGG(p.creator_name, ', ' ORDER BY p.id)::character varying AS names
             FROM
-                book_persons bp
-            JOIN persons p ON p.id = bp.person_id
-            GROUP BY bp.book_id, bp.role_id
+                book_creators bc
+            JOIN creators p ON p.id = bc.creator_id
+            GROUP BY bc.book_id, bc.role_id
         ),
         tags_agg AS (
             SELECT
@@ -65,6 +66,7 @@ BEGIN
             COALESCE(t.names, '') AS translator_names,
             COALESCE(ts.names, '') AS translation_supervision_names,
             COALESCE(e.names, '') AS editor_names,
+            COALESCE(i.names, '') AS illustrator_names,
             p.publisher_name,
             b.price,
             b.isbn,
@@ -72,21 +74,22 @@ BEGIN
             b.release_date,
             f.format_name,
             ub.purchase_date,
-            COALESCE(tg.tags, '') AS tags,
             ub.read_end_date,
+            COALESCE(tg.tags, '') AS tags,
             l.label_name,
             b.classification_code
         FROM books b
-        JOIN publishers p ON p.id = b.publisher_id
-        JOIN user_books ub ON ub.book_id = b.id
-        JOIN formats f ON f.id = b.format_id
-        LEFT JOIN role_agg a ON a.book_id = b.id AND a.role_id = 1
-        LEFT JOIN role_agg s ON s.book_id = b.id AND s.role_id = 2
-        LEFT JOIN role_agg t ON t.book_id = b.id AND t.role_id = 4
-        LEFT JOIN role_agg ts ON ts.book_id = b.id AND ts.role_id = 5
-        LEFT JOIN role_agg e ON e.book_id = b.id AND e.role_id = 6
-        LEFT JOIN tags_agg tg ON tg.book_id = b.id
-        LEFT JOIN labels l ON l.id = b.label_id
+            JOIN publishers p ON p.id = b.publisher_id
+            JOIN user_books ub ON ub.book_id = b.id
+            JOIN formats f ON f.id = b.format_id
+            LEFT JOIN labels l ON l.id = b.label_id
+            LEFT JOIN role_agg a ON a.book_id = b.id AND a.role_id = 1
+            LEFT JOIN role_agg s ON s.book_id = b.id AND s.role_id = 2
+            LEFT JOIN role_agg t ON t.book_id = b.id AND t.role_id = 4
+            LEFT JOIN role_agg ts ON ts.book_id = b.id AND ts.role_id = 5
+            LEFT JOIN role_agg e ON e.book_id = b.id AND e.role_id = 6
+            LEFT JOIN role_agg i ON e.book_id = b.id AND e.role_id = 7
+            LEFT JOIN tags_agg tg ON tg.book_id = b.id
         WHERE
             (p_tag IS NULL OR EXISTS (
                 SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.tag_id = p_tag
