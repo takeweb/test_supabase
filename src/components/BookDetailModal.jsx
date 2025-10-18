@@ -6,7 +6,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
   if (!book) return null; // bookがnullの場合は何も表示しない
 
   const [purchaseDate, setPurchaseDate] = useState(book.purchase_date || ""); // 購入日
-  const [readEndDate, setReadEndDate] = useState(book.read_end_date || ""); // 読了日 
+  const [readEndDate, setReadEndDate] = useState(book.read_end_date || ""); // 読了日
   const [tags, setTags] = useState([]); // タグ一覧
   const [selectedTags, setSelectedTags] = useState([]); // 選択されたタグ
 
@@ -18,7 +18,9 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         console.error("タグの取得に失敗しました:", error);
       } else {
         // tag_nameで昇順にソート
-        const sortedTags = (data || []).sort((a, b) => a.tag_name.localeCompare(b.tag_name));
+        const sortedTags = (data || []).sort((a, b) =>
+          a.tag_name.localeCompare(b.tag_name)
+        );
         setTags(sortedTags);
       }
     };
@@ -44,10 +46,11 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
   }, [book.id]);
 
   const handleTagToggle = (tagId) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
-        ? prev.filter((id) => id !== tagId) // 解除
-        : [...prev, tagId] // 選択
+    setSelectedTags(
+      (prev) =>
+        prev.includes(tagId)
+          ? prev.filter((id) => id !== tagId) // 解除
+          : [...prev, tagId] // 選択
     );
   };
 
@@ -135,7 +138,9 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
     const label_name = book.label_name;
     const classification_code = book.classification_code;
 
-    return `${title}${edition ? ` ${edition}` : ""}${subtitle ? `  ―${subtitle}` : ""}${classification_code ? ` (${label_name} ${classification_code})` : ""}`;
+    return `${title}${edition ? ` ${edition}` : ""}${
+      subtitle ? `  ―${subtitle}` : ""
+    }${classification_code ? ` (${label_name} ${classification_code})` : ""}`;
   };
 
   // console.log("BookDetailModalに渡されたbookオブジェクト:", book); // 追加: bookオブジェクトのデバッグログ
@@ -151,21 +156,43 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
           />
           <h2 className="text-xl font-bold mb-4">{formatBookTitle(book)}</h2>
         </div>
-        <p><strong>著者:</strong> {book.author_names || "-"}</p>
+        <p>
+          <strong>著者:</strong> {book.author_names || "-"}
+        </p>
         {book.translator_names && (
           <div>翻訳者: {book.translator_names || "-"}</div>
         )}
-        <p><strong>出版社:</strong> {book.publisher_name || "-"}</p>
-        <p><strong>定価:</strong> {book.price ? `¥${book.price.toLocaleString()}` : "-"}</p>
-        <p><strong>ISBN-10:</strong> {book.isbn_10 || "-"}</p>
-        <p><strong>ISBN-13:</strong> {book.isbn || "-"}</p>
-        <p><strong>判型:</strong> {book.format_name || "-"}</p>
-        <p><strong>頁数:</strong> {book.pages ? `${book.pages}ページ` : "-"}</p>
-        <p><strong>発売日:</strong> {book.release_date || "-"}</p>
-        
+        {book.illustrator_names && (
+          <div>イラスト: {book.illustrator_names || "-"}</div>
+        )}
+        <p>
+          <strong>出版社:</strong> {book.publisher_name || "-"}
+        </p>
+        <p>
+          <strong>定価:</strong>{" "}
+          {book.price ? `¥${book.price.toLocaleString()}` : "-"}
+        </p>
+        <p>
+          <strong>ISBN-10:</strong> {book.isbn_10 || "-"}
+        </p>
+        <p>
+          <strong>ISBN-13:</strong> {book.isbn || "-"}
+        </p>
+        <p>
+          <strong>判型:</strong> {book.format_name || "-"}
+        </p>
+        <p>
+          <strong>頁数:</strong> {book.pages ? `${book.pages}ページ` : "-"}
+        </p>
+        <p>
+          <strong>発売日:</strong> {book.release_date || "-"}
+        </p>
 
         <div className="mt-4 flex items-center">
-          <label htmlFor="purchase-date" className="block text-sm font-medium text-gray-700 mr-2">
+          <label
+            htmlFor="purchase-date"
+            className="block text-sm font-medium text-gray-700 mr-2"
+          >
             <strong>購入日:</strong>
           </label>
           <input
@@ -176,8 +203,11 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
             className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2" // テキストサイズを統一
           />
         </div>
-          <div className="mt-4 flex items-center">
-          <label htmlFor="purchase-date" className="block text-sm font-medium text-gray-700 mr-2">
+        <div className="mt-4 flex items-center">
+          <label
+            htmlFor="purchase-date"
+            className="block text-sm font-medium text-gray-700 mr-2"
+          >
             <strong>読了日:</strong>
           </label>
           <input
@@ -210,7 +240,9 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-4 flex justify-between"> {/* ボタン間のスペースを調整 */}
+        <div className="mt-4 flex justify-between">
+          {" "}
+          {/* ボタン間のスペースを調整 */}
           <button
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             onClick={handleUpdate}

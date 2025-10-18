@@ -10,11 +10,11 @@
   * isbn・・・・・・AmazonからISBN-13を貼り付け
   * release_date・・Amazonから発売日を貼り付け
   * format_id・・formatsからidを選択
-* personsに著者を登録
-  * person_name・・・著者名を登録
-* book_persons
+* creatorsに著者を登録
+  * creator_name・・・著者名を登録
+* book_creators
   * book_id・・・booksからidを選択
-  * person_id・・・personsからidを選択
+  * creator_id・・・creatorsからidを選択
   * role_id・・・rolesからidを選択
 * user_books
   * user_id・・・ログイン者のUUID
