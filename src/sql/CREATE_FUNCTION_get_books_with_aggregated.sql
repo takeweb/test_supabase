@@ -88,7 +88,7 @@ BEGIN
             LEFT JOIN role_agg t ON t.book_id = b.id AND t.role_id = 4
             LEFT JOIN role_agg ts ON ts.book_id = b.id AND ts.role_id = 5
             LEFT JOIN role_agg e ON e.book_id = b.id AND e.role_id = 6
-            LEFT JOIN role_agg i ON e.book_id = b.id AND e.role_id = 7
+            LEFT JOIN role_agg i ON i.book_id = b.id AND i.role_id = 7
             LEFT JOIN tags_agg tg ON tg.book_id = b.id
         WHERE
             (p_tag IS NULL OR EXISTS (
