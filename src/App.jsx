@@ -123,8 +123,6 @@ function App() {
     });
   };
 
-  console.log("App.jsxで選択されたbook:", selectedBook);
-
   return (
     <>
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -135,7 +133,7 @@ function App() {
         >
           <div className="flex flex-row items-center justify-center px-6 py-1 gap-6 pt-2">
             <h1 className="text-2xl font-bold text-blue-900 tracking-tight whitespace-nowrap flex items-end mb-0">
-              Supabase 書籍リスト
+              My Books
             </h1>
             {/* タグセレクト（ログイン時のみ） */}
             {user && (
