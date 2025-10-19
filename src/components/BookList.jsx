@@ -70,6 +70,22 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
               <div>発売日: {book.release_date || "-"}</div>
               {book.purchase_date && <div>購入日: {book.purchase_date}</div>}
               {book.read_end_date && <div>読了日: {book.read_end_date}</div>}
+              {/* タグを表示 */}
+              {book.tags && (
+                <div className="mt-3">
+                  <div className="text-sm text-gray-600 mb-1">タグ:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {book.tags.split(", ").map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full border border-blue-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
