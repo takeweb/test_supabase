@@ -13,14 +13,21 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
   useEffect(() => {
     // タグ一覧を取得
     const fetchTags = async () => {
-      const { data, error } = await supabase.from("tags").select("*");
+      const { data, error } = await supabase
+        .from("tags")
+        .select("*")
+        .order("genre_id", { ascending: true })
+        .order("tag_name", { ascending: true });
       if (error) {
         console.error("タグの取得に失敗しました:", error);
       } else {
-        // tag_nameで昇順にソート
-        const sortedTags = (data || []).sort((a, b) =>
-          a.tag_name.localeCompare(b.tag_name)
-        );
+        // genre_id、tag_nameで昇順にソート（念のため）
+        const sortedTags = (data || []).sort((a, b) => {
+          if (a.genre_id !== b.genre_id) {
+            return a.genre_id - b.genre_id;
+          }
+          return a.tag_name.localeCompare(b.tag_name);
+        });
         setTags(sortedTags);
       }
     };
