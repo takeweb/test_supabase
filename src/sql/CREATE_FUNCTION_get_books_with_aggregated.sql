@@ -48,7 +48,7 @@ BEGIN
         tags_agg AS (
             SELECT
                 bt.book_id,
-                STRING_AGG(tg.tag_name, ', ' ORDER BY tg.tag_name)::character varying AS tags
+                STRING_AGG(tg.tag_name, ', ' ORDER BY tg.genre_id, tg.tag_name)::character varying AS tags
             FROM
                 book_tags bt
             JOIN tags tg ON tg.id = bt.tag_id

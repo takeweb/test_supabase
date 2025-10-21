@@ -75,14 +75,17 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
                 <div className="mt-3">
                   <div className="text-sm text-gray-600 mb-1">タグ:</div>
                   <div className="flex flex-wrap gap-1">
-                    {book.tags.split(", ").map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full border border-blue-200"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {book.tags
+                      .split(", ")
+                      .filter((tag) => tag.trim() !== "") // 空文字を除外
+                      .map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full border border-blue-200"
+                        >
+                          {tag.trim()}
+                        </span>
+                      ))}
                   </div>
                 </div>
               )}
