@@ -154,102 +154,111 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-        <div className="flex flex-col items-center">
-          <img
-            src={getBookCoverUrl(supabase, book.book_cover_image_name)}
-            alt="表紙画像"
-            className="w-48 h-auto mb-4 rounded" // 表紙画像を大きく
-          />
-          <h2 className="text-xl font-bold mb-4">{formatBookTitle(book)}</h2>
-        </div>
-        <p>
-          <strong>著者:</strong> {book.author_names || "-"}
-        </p>
-        {book.translator_names && (
-          <div>翻訳者: {book.translator_names || "-"}</div>
-        )}
-        {book.illustrator_names && (
-          <div>イラスト: {book.illustrator_names || "-"}</div>
-        )}
-        <p>
-          <strong>出版社:</strong> {book.publisher_name || "-"}
-        </p>
-        <p>
-          <strong>定価:</strong>{" "}
-          {book.price ? `¥${book.price.toLocaleString()}` : "-"}
-        </p>
-        <p>
-          <strong>ISBN-10:</strong> {book.isbn_10 || "-"}
-        </p>
-        <p>
-          <strong>ISBN-13:</strong> {book.isbn || "-"}
-        </p>
-        <p>
-          <strong>判型:</strong> {book.format_name || "-"}
-        </p>
-        <p>
-          <strong>頁数:</strong> {book.pages ? `${book.pages}ページ` : "-"}
-        </p>
-        <p>
-          <strong>発売日:</strong> {book.release_date || "-"}
-        </p>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg md:max-w-xl max-h-[90vh] flex flex-col">
+        {/* 本文: 全体はスクロールしない（タグ部分だけスクロール） */}
+        <div className="p-6 overflow-visible">
+          <h2 className="text-xl font-bold mb-4 text-center md:text-left">
+            {formatBookTitle(book)}
+          </h2>
 
-        <div className="mt-4 flex items-center">
-          <label
-            htmlFor="purchase-date"
-            className="block text-sm font-medium text-gray-700 mr-2"
-          >
-            <strong>購入日:</strong>
-          </label>
-          <input
-            type="date"
-            id="purchase-date"
-            value={purchaseDate}
-            onChange={(e) => setPurchaseDate(e.target.value)}
-            className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2" // テキストサイズを統一
-          />
-        </div>
-        <div className="mt-4 flex items-center">
-          <label
-            htmlFor="purchase-date"
-            className="block text-sm font-medium text-gray-700 mr-2"
-          >
-            <strong>読了日:</strong>
-          </label>
-          <input
-            type="date"
-            id="read-end-date"
-            value={readEndDate}
-            onChange={(e) => setReadEndDate(e.target.value)}
-            className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2" // テキストサイズを統一
-          />
-        </div>
+          <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
+            <div className="flex-shrink-0 flex justify-center md:justify-start">
+              <img
+                src={getBookCoverUrl(supabase, book.book_cover_image_name)}
+                alt="表紙画像"
+                className="w-40 md:w-48 h-auto mb-4 md:mb-0 rounded"
+              />
+            </div>
+            <div className="flex-1 space-y-2">
+              <p>
+                <strong>著者:</strong> {book.author_names || "-"}
+              </p>
+              {book.translator_names && (
+                <div>翻訳者: {book.translator_names || "-"}</div>
+              )}
+              {book.illustrator_names && (
+                <div>イラスト: {book.illustrator_names || "-"}</div>
+              )}
+              <p>
+                <strong>出版社:</strong> {book.publisher_name || "-"}
+              </p>
+              <p>
+                <strong>定価:</strong>{" "}
+                {book.price ? `¥${book.price.toLocaleString()}` : "-"}
+              </p>
+              <p>
+                <strong>ISBN-10:</strong> {book.isbn_10 || "-"}
+              </p>
+              <p className="whitespace-nowrap">
+                <strong>ISBN-13:</strong> {book.isbn || "-"}
+              </p>
+              <p>
+                <strong>判型:</strong> {book.format_name || "-"}
+              </p>
+              <p>
+                <strong>頁数:</strong> {book.pages ? `${book.pages}ページ` : "-"}
+              </p>
+              <p>
+                <strong>発売日:</strong> {book.release_date || "-"}
+              </p>
+            </div>
+          </div>
 
-        {/* タグ選択UIを追加 */}
-        <div className="mt-4">
-          <p className="text-sm font-medium text-gray-700">タグ:</p>
-          <div
-            className="flex flex-wrap gap-2 mt-2 overflow-y-auto"
-            style={{ maxHeight: "120px" }} // 高さを制限してスクロール可能に
-          >
-            {tags.map((tag) => (
-              <label key={tag.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedTags.includes(tag.id)}
-                  onChange={() => handleTagToggle(tag.id)}
-                  className="mr-2"
-                />
-                {tag.tag_name}
-              </label>
-            ))}
+          <div className="mt-4 flex items-center">
+            <label
+              htmlFor="purchase-date"
+              className="block text-sm font-medium text-gray-700 mr-2"
+            >
+              <strong>購入日:</strong>
+            </label>
+            <input
+              type="date"
+              id="purchase-date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+              className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
+            />
+          </div>
+          <div className="mt-4 flex items-center">
+            <label
+              htmlFor="purchase-date"
+              className="block text-sm font-medium text-gray-700 mr-2"
+            >
+              <strong>読了日:</strong>
+            </label>
+            <input
+              type="date"
+              id="read-end-date"
+              value={readEndDate}
+              onChange={(e) => setReadEndDate(e.target.value)}
+              className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
+            />
+          </div>
+
+          {/* タグ選択UIを追加 */}
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700">タグ:</p>
+            <div
+              className="flex flex-wrap gap-2 mt-2 overflow-y-auto"
+              style={{ maxHeight: "28vh" }}
+            >
+              {tags.map((tag) => (
+                <label key={tag.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedTags.includes(tag.id)}
+                    onChange={() => handleTagToggle(tag.id)}
+                    className="mr-2"
+                  />
+                  {tag.tag_name}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 flex justify-between">
-          {" "}
-          {/* ボタン間のスペースを調整 */}
+        {/* フッター（ボタン）: 常に下に表示される */}
+        <div className="sticky bottom-0 bg-white border-t p-4 flex justify-between">
           <button
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             onClick={handleUpdate}
