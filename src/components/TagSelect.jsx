@@ -1,8 +1,11 @@
 function TagSelect({ tags, selectedTag, setSelectedTag, setCurrentPage }) {
   // tags を genre_id, tag_name 順でソート
   const sortedTags = [...tags].sort((a, b) => {
-    if (a.genre_id !== b.genre_id) {
-      return a.genre_id - b.genre_id;
+    const genreA = Number(a.genre_id);
+    const genreB = Number(b.genre_id);
+
+    if (genreA !== genreB) {
+      return genreA - genreB;
     }
     return a.tag_name.localeCompare(b.tag_name);
   });
