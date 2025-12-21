@@ -278,7 +278,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
             <p className="text-sm font-medium text-gray-700">タグ:</p>
             <div
               className="flex flex-wrap gap-2 mt-2 overflow-y-auto"
-              style={{ maxHeight: "28vh" }}
+              style={{ maxHeight: "28vh", paddingBottom: "4rem" }}
             >
               {tags.map((tag) => (
                 <label key={tag.id} className="flex items-center">
