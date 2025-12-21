@@ -7,6 +7,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
 
   const [purchaseDate, setPurchaseDate] = useState(book.purchase_date || ""); // 購入日
   const [readEndDate, setReadEndDate] = useState(book.read_end_date || ""); // 読了日
+  const [readStartDate, setReadStartDate] = useState(book.read_start_date || ""); // 読み始め日
   const [tags, setTags] = useState([]); // タグ一覧
   const [selectedTags, setSelectedTags] = useState([]); // 選択されたタグ
 
@@ -52,6 +53,28 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
     fetchSelectedTags();
   }, [book.id]);
 
+  useEffect(() => {
+    // user_booksから日付情報を取得（購入日・読始日・読了日）
+    const fetchUserBookDates = async () => {
+      if (!book.id || !book.user_id) return;
+      const { data, error } = await supabase
+        .from("user_books")
+        .select("purchase_date, read_start_date, read_end_date")
+        .eq("book_id", book.id)
+        .eq("user_id", book.user_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("user_booksの取得に失敗しました:", error);
+      } else if (data) {
+        setPurchaseDate(data.purchase_date || "");
+        setReadStartDate(data.read_start_date || "");
+        setReadEndDate(data.read_end_date || "");
+      }
+    };
+    fetchUserBookDates();
+  }, [book.id, book.user_id]);
+
   const handleTagToggle = (tagId) => {
     setSelectedTags(
       (prev) =>
@@ -94,32 +117,22 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         return;
       }
 
-      // purchase_dateを更新
-      if (purchaseDate) {
+      // user_booksの日時フィールドをまとめて更新（存在するもののみ）
+      const updateData = {};
+      if (purchaseDate) updateData.purchase_date = purchaseDate;
+      if (readStartDate) updateData.read_start_date = readStartDate;
+      if (readEndDate) updateData.read_end_date = readEndDate;
+
+      if (Object.keys(updateData).length > 0) {
         const { error: updateError } = await supabase
           .from("user_books")
-          .update({ purchase_date: purchaseDate })
+          .update(updateData)
           .eq("user_id", book.user_id)
           .eq("book_id", book.id);
 
         if (updateError) {
-          console.error("購入日の更新に失敗しました:", updateError);
-          alert("購入日の更新に失敗しました。");
-          return;
-        }
-      }
-
-      // read_end_dateを更新
-      if (readEndDate) {
-        const { error: updateError } = await supabase
-          .from("user_books")
-          .update({ read_end_date: readEndDate })
-          .eq("user_id", book.user_id)
-          .eq("book_id", book.id);
-
-        if (updateError) {
-          console.error("読了日の更新に失敗しました:", updateError);
-          alert("読了日の更新に失敗しました。");
+          console.error("user_booksの更新に失敗しました:", updateError);
+          alert("日付情報の更新に失敗しました。");
           return;
         }
       }
@@ -204,35 +217,60 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center">
-            <label
-              htmlFor="purchase-date"
-              className="block text-sm font-medium text-gray-700 mr-2"
-            >
-              <strong>購入日:</strong>
-            </label>
-            <input
-              type="date"
-              id="purchase-date"
-              value={purchaseDate}
-              onChange={(e) => setPurchaseDate(e.target.value)}
-              className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
-            />
-          </div>
-          <div className="mt-4 flex items-center">
-            <label
-              htmlFor="purchase-date"
-              className="block text-sm font-medium text-gray-700 mr-2"
-            >
-              <strong>読了日:</strong>
-            </label>
-            <input
-              type="date"
-              id="read-end-date"
-              value={readEndDate}
-              onChange={(e) => setReadEndDate(e.target.value)}
-              className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
-            />
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            {/* 購入日：左列、右列は空白（md以上では見た目揃えるため） */}
+            <div className="flex items-center">
+              <label
+                htmlFor="purchase-date"
+                className="block text-sm font-medium text-gray-700 mr-2"
+              >
+                <strong>購入日:</strong>
+              </label>
+              <input
+                type="date"
+                id="purchase-date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+                className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
+              />
+            </div>
+
+            {/* md以上でのみ表示する空白カラム（小画面では非表示） */}
+            <div className="hidden md:block" aria-hidden="true"></div>
+
+            {/* 読始日（左） */}
+            <div className="flex items-center">
+              <label
+                htmlFor="read-start-date"
+                className="block text-sm font-medium text-gray-700 mr-2"
+              >
+                <strong>読始日:</strong>
+              </label>
+              <input
+                type="date"
+                id="read-start-date"
+                value={readStartDate}
+                onChange={(e) => setReadStartDate(e.target.value)}
+                className="block w-40 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
+              />
+            </div>
+
+            {/* 読了日（右） */}
+            <div className="flex items-center">
+              <label
+                htmlFor="read-end-date"
+                className="block text-sm font-medium text-gray-700 mr-2"
+              >
+                <strong>読了日:</strong>
+              </label>
+              <input
+                type="date"
+                id="read-end-date"
+                value={readEndDate}
+                onChange={(e) => setReadEndDate(e.target.value)}
+                className="block w-40 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
+              />
+            </div>
           </div>
 
           {/* タグ選択UIを追加 */}
