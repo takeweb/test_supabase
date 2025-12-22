@@ -69,6 +69,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
               <div>頁数: {book.pages ? `${book.pages}ページ` : "-"}</div>
               <div>発売日: {book.release_date || "-"}</div>
               {book.purchase_date && <div>購入日: {book.purchase_date}</div>}
+              {book.read_start_date && <div>読始日: {book.read_start_date}</div>}
               {book.read_end_date && <div>読了日: {book.read_end_date}</div>}
               {/* タグを表示 */}
               {book.tags && (
