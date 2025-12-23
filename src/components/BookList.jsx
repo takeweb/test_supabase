@@ -37,21 +37,34 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
         return (
           <div
             key={book.id}
-            className="book-item cursor-pointer"
+            className="book-item flex flex-col gap-2 cursor-pointer"
             onClick={() => {
               console.log("BookListでクリックされたbook:", book);
               onBookClick(book);
             }}
           >
-            <div className="book-cover">
-              <img
-                src={getBookCoverUrl(supabase, book.book_cover_image_name)}
-                alt="本の表紙"
-                className="book-cover-img"
-              />
+            <div
+              className="book-title text-lg font-semibold truncate mb-2 leading-tight"
+              title={formatBookTitle(book)}
+            >
+              {formatBookTitle(book)}
             </div>
-            <div className="book-detail">
-              <div className="book-title">{formatBookTitle(book)}</div>
+
+            <div className="book-row grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+              <div className="book-cover col-span-1 sm:col-span-3 flex-shrink-0 overflow-hidden">
+                <div className="w-full h-48 sm:w-40 sm:h-60 overflow-hidden rounded">
+                  {book.book_cover_image_name ? (
+                    <img
+                      src={getBookCoverUrl(supabase, book.book_cover_image_name)}
+                      alt="本の表紙"
+                      className="block w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full" />
+                  )}
+                </div>
+              </div>
+              <div className="book-detail col-span-1 sm:col-span-9">
               <div>著者: {book.author_names || "-"}</div>
               {book.translator_names && (
                 <div>翻訳者: {book.translator_names || "-"}</div>
@@ -91,6 +104,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
                 </div>
               )}
             </div>
+          </div>
           </div>
         );
       })}
