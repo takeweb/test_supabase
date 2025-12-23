@@ -37,14 +37,14 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
         return (
           <div
             key={book.id}
-            className="book-item flex flex-col gap-2 cursor-pointer"
+            className="book-item flex flex-col gap-2 cursor-pointer min-w-0"
             onClick={() => {
               console.log("BookListでクリックされたbook:", book);
               onBookClick(book);
             }}
           >
             <div
-              className="book-title text-lg font-semibold truncate mb-2 leading-tight"
+              className="book-title w-full text-lg font-semibold truncate mb-2 leading-tight"
               title={formatBookTitle(book)}
             >
               {formatBookTitle(book)}
@@ -64,7 +64,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
                   )}
                 </div>
               </div>
-              <div className="book-detail col-span-1 sm:col-span-9">
+              <div className="book-detail col-span-1 sm:col-span-9 min-w-0">
               <div>著者: {book.author_names || "-"}</div>
               {book.translator_names && (
                 <div>翻訳者: {book.translator_names || "-"}</div>
