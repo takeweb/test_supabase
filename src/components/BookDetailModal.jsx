@@ -175,7 +175,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
           </h2>
 
           <div className="flex flex-col md:flex-row md:items-start md:space-x-6">
-            <div className="flex-shrink-0 flex justify-center md:justify-start">
+            <div className="shrink-0 flex justify-center md:justify-start">
               <img
                 src={getBookCoverUrl(supabase, book.book_cover_image_name)}
                 alt="表紙画像"

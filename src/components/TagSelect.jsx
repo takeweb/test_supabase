@@ -20,7 +20,7 @@ function TagSelect({ tags, selectedTag, setSelectedTag, setCurrentPage }) {
       </label>
       <select
         id="tag-select"
-        className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-800 shadow-sm min-w-[120px]"
+        className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-800 shadow-sm min-w-32"
         value={selectedTag}
         onChange={(e) => {
           setSelectedTag(e.target.value);

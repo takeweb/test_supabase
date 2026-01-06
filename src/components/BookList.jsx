@@ -11,7 +11,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
 
   if (books.length === 0) {
     return (
-      <div className="flex justify-center items-center min-h-[56px] w-full">
+      <div className="flex justify-center items-center min-h-14 w-full">
         <p style={{ color: "#888" }} className="text-lg">
           該当する書籍が見つかりませんでした。
         </p>
@@ -51,7 +51,7 @@ function BookList({ books, pagination, onBookClick, onUpdate }) {
             </div>
 
             <div className="book-row grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
-              <div className="book-cover col-span-1 sm:col-span-3 flex-shrink-0 overflow-hidden">
+              <div className="book-cover col-span-1 sm:col-span-3 shrink-0 overflow-hidden">
                 <div className="w-full h-48 sm:w-40 sm:h-60 overflow-hidden rounded">
                   {book.book_cover_image_name ? (
                     <img
