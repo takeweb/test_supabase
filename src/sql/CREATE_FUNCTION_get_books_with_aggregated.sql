@@ -55,6 +55,7 @@ BEGIN
             FROM
                 book_tags bt
             JOIN tags tg ON tg.id = bt.tag_id
+            WHERE bt.user_id = auth.uid()
             GROUP BY bt.book_id
         )
         SELECT
@@ -96,7 +97,7 @@ BEGIN
             LEFT JOIN tags_agg tg ON tg.book_id = b.id
         WHERE
             (p_tag IS NULL OR EXISTS (
-                SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.tag_id = p_tag
+                SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.tag_id = p_tag AND bt.user_id = auth.uid()
             ))
             AND (p_status IS NULL OR ub.status_id = p_status)
         ORDER BY

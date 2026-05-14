@@ -42,7 +42,8 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
       const { data, error } = await supabase
         .from("book_tags")
         .select("tag_id")
-        .eq("book_id", book.id);
+        .eq("book_id", book.id)
+        .eq("user_id", book.user_id);
 
       if (error) {
         console.error("選択済みタグの取得に失敗しました:", error);
@@ -96,7 +97,8 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
       const { error: deleteError } = await supabase
         .from("book_tags")
         .delete()
-        .eq("book_id", book.id);
+        .eq("book_id", book.id)
+        .eq("user_id", book.user_id);
 
       if (deleteError) {
         console.error("既存のタグ削除に失敗しました:", deleteError);
@@ -108,6 +110,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         selectedTags.map((tagId) => ({
           book_id: book.id,
           tag_id: tagId,
+          user_id: book.user_id,
         }))
       );
 
