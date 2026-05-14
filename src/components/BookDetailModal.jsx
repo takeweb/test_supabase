@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../libs/supabaseClient";
-import { getBookCoverUrl } from "../libs/bookUtil";
+import { getBookCoverUrl, getStatusSelectData } from "../libs/bookUtil";
 
 const BookDetailModal = ({ book, onClose, onUpdate }) => {
   if (!book) return null; // bookがnullの場合は何も表示しない
@@ -10,6 +10,12 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
   const [readStartDate, setReadStartDate] = useState(book.read_start_date || ""); // 読み始め日
   const [tags, setTags] = useState([]); // タグ一覧
   const [selectedTags, setSelectedTags] = useState([]); // 選択されたタグ
+  const [statuses, setStatuses] = useState([]); // ステータス一覧
+  const [selectedStatus, setSelectedStatus] = useState(""); // 選択されたステータス
+
+  useEffect(() => {
+    getStatusSelectData(supabase).then((data) => setStatuses(data || []));
+  }, []);
 
   useEffect(() => {
     // タグ一覧を取得
@@ -60,7 +66,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
       if (!book.id || !book.user_id) return;
       const { data, error } = await supabase
         .from("user_books")
-        .select("purchase_date, read_start_date, read_end_date")
+        .select("purchase_date, read_start_date, read_end_date, status_id")
         .eq("book_id", book.id)
         .eq("user_id", book.user_id)
         .maybeSingle();
@@ -71,6 +77,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         setPurchaseDate(data.purchase_date || "");
         setReadStartDate(data.read_start_date || "");
         setReadEndDate(data.read_end_date || "");
+        setSelectedStatus(data.status_id != null ? String(data.status_id) : "");
       }
     };
     fetchUserBookDates();
@@ -120,24 +127,24 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
         return;
       }
 
-      // user_booksの日時フィールドをまとめて更新（存在するもののみ）
-      const updateData = {};
+      // user_booksの日時・ステータスをまとめて更新
+      const updateData = {
+        status_id: selectedStatus !== "" ? Number(selectedStatus) : null,
+      };
       if (purchaseDate) updateData.purchase_date = purchaseDate;
       if (readStartDate) updateData.read_start_date = readStartDate;
       if (readEndDate) updateData.read_end_date = readEndDate;
 
-      if (Object.keys(updateData).length > 0) {
-        const { error: updateError } = await supabase
-          .from("user_books")
-          .update(updateData)
-          .eq("user_id", book.user_id)
-          .eq("book_id", book.id);
+      const { error: updateError } = await supabase
+        .from("user_books")
+        .update(updateData)
+        .eq("user_id", book.user_id)
+        .eq("book_id", book.id);
 
-        if (updateError) {
-          console.error("user_booksの更新に失敗しました:", updateError);
-          alert("日付情報の更新に失敗しました。");
-          return;
-        }
+      if (updateError) {
+        console.error("user_booksの更新に失敗しました:", updateError);
+        alert("日付情報の更新に失敗しました。");
+        return;
       }
 
       alert("更新されました。");
@@ -221,7 +228,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
           </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            {/* 購入日：左列、右列は空白（md以上では見た目揃えるため） */}
+            {/* 購入日（左）・ステータス（右） */}
             <div className="flex items-center">
               <label
                 htmlFor="purchase-date"
@@ -237,9 +244,27 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
                 className="block w-48 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2"
               />
             </div>
-
-            {/* md以上でのみ表示する空白カラム（小画面では非表示） */}
-            <div className="hidden md:block" aria-hidden="true"></div>
+            <div className="flex items-center">
+              <label
+                htmlFor="status-select-modal"
+                className="block text-sm font-medium text-gray-700 mr-2"
+              >
+                <strong>ステータス:</strong>
+              </label>
+              <select
+                id="status-select-modal"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white text-gray-800 shadow-sm min-w-32"
+              >
+                <option value="">未設定</option>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id}>
+                    {status.status_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* 読始日（左） */}
             <div className="flex items-center">
