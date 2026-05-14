@@ -159,7 +159,7 @@ function App() {
                 {userMenuOpen && (
                   <div
                     id="user-menu-dropdown"
-                    className="absolute top-full right-0 mt-2 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col p-4 gap-2 min-w-[200px]"
+                    className="absolute top-full right-0 mt-2 w-56 bg-white border border-blue-200 rounded-lg shadow-lg z-50 animate-fade-in flex flex-col p-4 gap-2 min-w-50"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <UserIcon className="w-6 h-6 text-blue-500" />
