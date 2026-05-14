@@ -1,9 +1,11 @@
 DROP FUNCTION IF EXISTS get_books_with_aggregated_authors(int, int, bigint);
+DROP FUNCTION IF EXISTS get_books_with_aggregated_authors(int, int, bigint, bigint);
 
 CREATE OR REPLACE FUNCTION get_books_with_aggregated_authors(
     p_offset int,
     p_limit int,
-    p_tag bigint DEFAULT NULL
+    p_tag bigint DEFAULT NULL,
+    p_status bigint DEFAULT NULL
 )
 RETURNS TABLE (
     id bigint,
@@ -96,6 +98,7 @@ BEGIN
             (p_tag IS NULL OR EXISTS (
                 SELECT 1 FROM book_tags bt WHERE bt.book_id = b.id AND bt.tag_id = p_tag
             ))
+            AND (p_status IS NULL OR ub.status_id = p_status)
         ORDER BY
             b.release_date NULLS LAST,
             split_part(b.classification_code, ' ', 1),

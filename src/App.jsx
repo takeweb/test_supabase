@@ -4,6 +4,7 @@ import AuthForm from "./components/AuthForm";
 import BookList from "./components/BookList";
 import Pagination from "./components/Pagination";
 import TagSelect from "./components/TagSelect";
+import StatusSelect from "./components/StatusSelect";
 import UserIcon from "./components/UserIcon";
 import BookDetailModal from "./components/BookDetailModal";
 import {
@@ -11,7 +12,7 @@ import {
   handleSignIn,
   handleSignOut,
 } from "./libs/auth";
-import { getJoinedBooksData, getTagSelectData } from "./libs/bookUtil";
+import { getJoinedBooksData, getTagSelectData, getStatusSelectData } from "./libs/bookUtil";
 import { supabase } from "./libs/supabaseClient";
 
 function App() {
@@ -26,6 +27,8 @@ function App() {
   // データ状態
   const [tags, setTags] = useState([]);
   const [selectedTag, setSelectedTag] = useState("");
+  const [statuses, setStatuses] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [books, setBooks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -68,27 +71,27 @@ function App() {
     };
   }, []);
 
-  // タグ一覧取得
+  // タグ・ステータス一覧取得
   useEffect(() => {
     if (!user) return;
     getTagSelectData(supabase).then((tags) => setTags(tags || []));
+    getStatusSelectData(supabase).then((statuses) => setStatuses(statuses || []));
   }, [user]);
 
   // 書籍データ取得
   useEffect(() => {
     if (!user) return;
-    // getJoinedBooksDataの引数に合わせて呼び出し
     getJoinedBooksData(
       supabase,
       currentPage,
-      5, // itemsPerPage
+      5,
       (count) => setTotalPages(Math.max(1, Math.ceil(count / 5))),
-      selectedTag === "" ? null : selectedTag
+      selectedTag === "" ? null : selectedTag,
+      selectedStatus === "" ? null : selectedStatus
     ).then((books) => {
-      // getJoinedBooksDataの戻り値をsetBooksで反映
       if (books) setBooks(books);
     });
-  }, [user, selectedTag, currentPage]);
+  }, [user, selectedTag, selectedStatus, currentPage]);
 
   // ログイン
   const handleLogin = async (e) => {
@@ -135,13 +138,19 @@ function App() {
             <h1 className="text-2xl font-bold text-blue-900 tracking-tight whitespace-nowrap flex items-end mb-0">
               My Books
             </h1>
-            {/* タグセレクト（ログイン時のみ） */}
+            {/* タグ・ステータスセレクト（ログイン時のみ） */}
             {user && (
-              <div className="flex items-center justify-center mt-4">
+              <div className="flex items-center justify-center mt-4 gap-4">
                 <TagSelect
                   tags={tags}
                   selectedTag={selectedTag}
                   setSelectedTag={setSelectedTag}
+                  setCurrentPage={setCurrentPage}
+                />
+                <StatusSelect
+                  statuses={statuses}
+                  selectedStatus={selectedStatus}
+                  setSelectedStatus={setSelectedStatus}
                   setCurrentPage={setCurrentPage}
                 />
               </div>
@@ -220,13 +229,13 @@ function App() {
                 book={selectedBook}
                 onClose={() => setSelectedBook(null)}
                 onUpdate={() => {
-                  // 書籍データを再取得
                   getJoinedBooksData(
                     supabase,
                     currentPage,
-                    5, // itemsPerPage
+                    5,
                     (count) => setTotalPages(Math.max(1, Math.ceil(count / 5))),
-                    selectedTag === "" ? null : selectedTag
+                    selectedTag === "" ? null : selectedTag,
+                    selectedStatus === "" ? null : selectedStatus
                   ).then((books) => {
                     if (books) setBooks(books);
                   });
