@@ -48,6 +48,7 @@ BEGIN
             FROM
                 book_tags bt
             JOIN tags tg ON tg.id = bt.tag_id
+            WHERE bt.user_id = auth.uid()
             GROUP BY bt.book_id
         )
         SELECT
@@ -79,7 +80,7 @@ BEGIN
             INNER JOIN publishers p
                 ON p.id = b.publisher_id
             INNER JOIN user_books ub
-                ON ub.book_id = b.id
+                ON ub.book_id = b.id AND ub.user_id = auth.uid()
             INNER JOIN formats f
                 ON f.id = b.format_id
             LEFT JOIN labels l

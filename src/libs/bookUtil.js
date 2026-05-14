@@ -103,7 +103,8 @@ export async function getTotalCount(supabaseClient, userId, tagId = null, status
     const { data: tagBooks } = await supabaseClient
       .from("book_tags")
       .select("book_id")
-      .eq("tag_id", tagId);
+      .eq("tag_id", tagId)
+      .eq("user_id", userId);
     query = query.in("book_id", tagBooks?.map((row) => row.book_id) || []);
   }
 
