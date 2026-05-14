@@ -26,13 +26,15 @@ export function getBookCoverUrl(supabaseClient, bookCoverImageName) {
  * @param {number} itemsPerPage - 1ページあたりの表示項目数
  * @param {function(number): void} totalCountCallback - 総書籍数をmain.jsに伝えるためのコールバック関数
  * @param {string|undefined|null} tagId - 選択されたタグID（省略可）
+ * @param {string|undefined|null} statusId - 選択されたステータスID（省略可）
  */
 export async function getJoinedBooksData(
   supabaseClient,
   currentPage,
   itemsPerPage,
   totalCountCallback,
-  tagId = null
+  tagId = null,
+  statusId = null
 ) {
   try {
     // ページネーションのためのデータ範囲を計算
@@ -51,7 +53,7 @@ export async function getJoinedBooksData(
     // 総件数取得はgetTotalCount関数を利用（userIdを渡す）
     let totalCount = 0;
     try {
-      totalCount = await getTotalCount(supabaseClient, userId, tagId);
+      totalCount = await getTotalCount(supabaseClient, userId, tagId, statusId);
       if (totalCountCallback) totalCountCallback(totalCount);
     } catch (countError) {
       if (totalCountCallback) totalCountCallback(0);
@@ -61,6 +63,7 @@ export async function getJoinedBooksData(
     // RPCで書籍データ取得
     const rpcParams = { p_offset: offset, p_limit: limit };
     if (tagId && tagId !== "") rpcParams.p_tag = tagId;
+    if (statusId && statusId !== "") rpcParams.p_status = statusId;
     const { data: books, error: rpcError } = await supabaseClient.rpc(
       "get_books_with_aggregated_authors",
       rpcParams
@@ -83,33 +86,46 @@ export async function getJoinedBooksData(
  * @param {object} supabaseClient - Supabaseクライアントインスタンス
  * @param {number} userId - ログインユーザID
  * @param {number} tagId - 選択されたタグのID（省略可）
+ * @param {number} statusId - 選択されたステータスのID（省略可）
  * @returns 件数
  */
-export async function getTotalCount(supabaseClient, userId, tagId = null) {
-  if (tagId == null) {
-    // タグ指定なし→全件
-    const { data, error, count } = await supabaseClient
-      .from("user_books")
-      .select("book_id", { count: "exact", head: true })
-      .eq("user_id", userId);
-    return count || 0;
-  } else {
-    // タグ指定あり→タグで絞り込み
-    const { data, error, count } = await supabaseClient
-      .from("user_books")
-      .select("book_id", { count: "exact", head: true })
-      .in(
-        "book_id",
-        (
-          await supabaseClient
-            .from("book_tags")
-            .select("book_id")
-            .eq("tag_id", tagId)
-        ).data?.map((row) => row.book_id) || []
-      )
-      .eq("user_id", userId);
-    return count || 0;
+export async function getTotalCount(supabaseClient, userId, tagId = null, statusId = null) {
+  let query = supabaseClient
+    .from("user_books")
+    .select("book_id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (statusId) {
+    query = query.eq("status_id", statusId);
   }
+
+  if (tagId) {
+    const { data: tagBooks } = await supabaseClient
+      .from("book_tags")
+      .select("book_id")
+      .eq("tag_id", tagId);
+    query = query.in("book_id", tagBooks?.map((row) => row.book_id) || []);
+  }
+
+  const { count } = await query;
+  return count || 0;
+}
+
+/**
+ * ステータスのリストを取得する関数
+ * @param {object} supabaseClient - Supabaseクライアントインスタンス
+ * @returns {Promise<Array>} ステータスのリスト
+ */
+export async function getStatusSelectData(supabaseClient) {
+  const { data, error } = await supabaseClient
+    .from("statuses")
+    .select("id, status_name")
+    .order("id");
+  if (error) {
+    console.error("ステータス取得エラー:", error);
+    return [];
+  }
+  return data || [];
 }
 
 /**
