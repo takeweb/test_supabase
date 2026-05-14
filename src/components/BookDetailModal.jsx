@@ -176,7 +176,7 @@ const BookDetailModal = ({ book, onClose, onUpdate }) => {
   // console.log("BookDetailModalに渡されたbookオブジェクト:", book); // 追加: bookオブジェクトのデバッグログ
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-lg md:max-w-xl max-h-[90vh] flex flex-col">
         {/* 本文: 全体はスクロールしない（タグ部分だけスクロール） */}
         <div className="p-6 overflow-visible">
